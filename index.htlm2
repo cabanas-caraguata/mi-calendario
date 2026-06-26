@@ -1,12 +1,12 @@
-<meta charset="UTF-8">
-<meta name="viewport" content="width=dss="btn-guar<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-evice-width, initial-scale=1.0">
-  :root { --fondo:#f5f0e8; --texto:#2a2218; --agua:#a8c5c0; --libre:#d4ead7; --ocupado:#e03030; --hoy:#a8c5c0; --sel:#f0c040; --rango:#f7e49a; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cabañas Caraguatá – Disponibilidad</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+  :root { --fondo:#f5f0e8; --texto:#2a2218; --agua:#a8c5c0; --libre:#d4ead7; --ocupado:#e03030; --hoy:#a8c5c0; --sel:#f0c040; --rango:#f7e49a; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Inter',sans-serif; background:var(--fondo); color:var(--texto); min-height:100vh; }
   header { background:var(--texto); color:#f0ece4; padding:2rem 1.5rem 1.5rem; text-align:center; }
@@ -353,7 +353,7 @@ evice-width, initial-scale=1.0">
           </div>
           <textarea id="notas-${cab.id}" placeholder="Notas (ej: trae 4 personas, tiene mascota...)"></textarea>
         </div>
-        <button cladar-reserva" id="guardar-${cab.id}" style="display:none" onclick="guardarReserva('${cab.id}')">Guardar en registro de caja</button>
+        <button class="btn-guardar-reserva" id="guardar-${cab.id}" style="display:none" onclick="guardarReserva('${cab.id}')">Guardar en registro de caja</button>
         <a class="btn-cabana" id="wa-${cab.id}" style="background:${cab.color};display:none" href="#" target="_blank">Enviar consulta por WhatsApp</a>
       `;
       grid.appendChild(card);

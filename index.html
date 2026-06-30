@@ -73,7 +73,31 @@
   .guardado { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:#2a2218; color:white; padding:0.6rem 1.4rem; border-radius:20px; font-size:0.8rem; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:200; white-space:nowrap; }
   .guardado.visible { opacity:1; }
   footer { text-align:center; padding:1.5rem; font-size:0.75rem; color:#aaa; }
+  .sync-status { text-align:center; font-size:0.7rem; color:#999; padding:0.3rem; }
 </style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASHU5d-e2a1cKunNyY-ivNKHx3cFCwqCQ",
+    authDomain: "cabanas-caraguata.firebaseapp.com",
+    projectId: "cabanas-caraguata",
+    storageBucket: "cabanas-caraguata.firebasestorage.app",
+    messagingSenderId: "1063147857447",
+    appId: "1:1063147857447:web:1275eb03c4360710271002"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.firebaseDB = db;
+  window.firebaseDoc = doc;
+  window.firebaseGetDoc = getDoc;
+  window.firebaseSetDoc = setDoc;
+  window.firebaseOnSnapshot = onSnapshot;
+</script>
+
 </head>
 <body>
 <header>
@@ -87,6 +111,7 @@
   <div class="leyenda-item"><div class="dot" style="background:#f0c040"></div> Seleccionado</div>
 </div>
 <div class="cabanas-grid" id="cabanas-grid"></div>
+<div class="sync-status" id="sync-status">Conectando...</div>
 <div id="registro-contenedor" style="display:none">
   <div class="registro-panel">
     <div class="registro-header">
@@ -119,9 +144,9 @@
     { id:"marron", nombre:"Casa Marron", color:"#7a5c3a", precio:100000, precioStr:"$100.000/dia" }
   ];
 
-  let ocupadas, reservas;
-  try { ocupadas = JSON.parse(localStorage.getItem(KEY)) || {verde:[],roja:[],blanca:[],marron:[]}; } catch(e) { ocupadas={verde:[],roja:[],blanca:[],marron:[]}; }
-  try { reservas = JSON.parse(localStorage.getItem(KEY_RES)) || []; } catch(e) { reservas=[]; }
+  let ocupadas = {verde:[],roja:[],blanca:[],marron:[]};
+  let reservas = [];
+  let firestoreListo = false;
 
   const hoy = new Date();
   let meses={}, seleccion={};
@@ -135,9 +160,63 @@
   function diasEntre(f1,f2){ return Math.round((f2-f1)/(1000*60*60*24)); }
 
   function mostrarToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
+  function actualizarEstadoSync(msg){ const s=document.getElementById('sync-status'); if(s) s.textContent=msg; }
 
-  function guardarOcupadas(){ try{localStorage.setItem(KEY,JSON.stringify(ocupadas));}catch(e){} mostrarToast('Guardado'); }
-  function guardarReservas(){ try{localStorage.setItem(KEY_RES,JSON.stringify(reservas));}catch(e){} }
+  // ---- FIREBASE: espera a que el modulo cargue ----
+  function esperarFirebase(cb){
+    if(window.firebaseDB){ cb(); } else { setTimeout(()=>esperarFirebase(cb), 100); }
+  }
+
+  function iniciarFirestore(){
+    esperarFirebase(()=>{
+      const db = window.firebaseDB;
+      const docOcupadas = window.firebaseDoc(db,'calendario','ocupadas');
+      const docReservas = window.firebaseDoc(db,'calendario','reservas');
+
+      // Escucha cambios en tiempo real de las fechas ocupadas
+      window.firebaseOnSnapshot(docOcupadas, (snap)=>{
+        if(snap.exists()){
+          const data = snap.data();
+          ocupadas = { verde:data.verde||[], roja:data.roja||[], blanca:data.blanca||[], marron:data.marron||[] };
+        }
+        firestoreListo = true;
+        actualizarEstadoSync('');
+        renderizar();
+      }, (err)=>{
+        console.error(err);
+        actualizarEstadoSync('Sin conexion - mostrando datos locales');
+      });
+
+      // Escucha cambios en tiempo real de las reservas (solo relevante en modo admin)
+      window.firebaseOnSnapshot(docReservas, (snap)=>{
+        if(snap.exists()){
+          const data = snap.data();
+          reservas = data.lista || [];
+        }
+        if(admin) renderRegistro();
+      });
+    });
+  }
+
+  function guardarOcupadas(){
+    const db = window.firebaseDB;
+    if(!db){ mostrarToast('Sin conexion'); return; }
+    const docOcupadas = window.firebaseDoc(db,'calendario','ocupadas');
+    window.firebaseSetDoc(docOcupadas, ocupadas).then(()=>{
+      mostrarToast('Guardado');
+    }).catch(()=>{
+      mostrarToast('Error al guardar - revisa tu conexion');
+    });
+  }
+
+  function guardarReservas(){
+    const db = window.firebaseDB;
+    if(!db) return;
+    const docReservas = window.firebaseDoc(db,'calendario','reservas');
+    window.firebaseSetDoc(docReservas, { lista: reservas }).catch(()=>{
+      mostrarToast('Error al guardar reserva');
+    });
+  }
 
   function hayOcupadoEnRango(cabId,entrada,salida){ const ocp=ocupadas[cabId]||[]; let d=new Date(entrada); while(d<=salida){if(ocp.includes(clave(d)))return true;d=new Date(d.getTime()+86400000);} return false; }
 
@@ -409,6 +488,8 @@
   }
 
   renderizar();
+  iniciarFirestore();
 </script>
+
 </body>
 </html>

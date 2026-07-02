@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +6,7 @@
 <title>Cabañas Caraguatá - Información</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
 
   :root {
     --verde: #2d6a4f;
@@ -16,7 +17,9 @@
     --gris: #666;
   }
 
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
 
   body {
     font-family: 'Inter', sans-serif;
@@ -25,6 +28,7 @@
     font-size: 16px;
     line-height: 1.6;
   }
+
 
   .header {
     background: var(--verde);
@@ -55,6 +59,7 @@
     transition: transform 0.15s;
   }
   .btn-wsp:hover { transform: scale(1.04); }
+
 
   .indice {
     background: white;
@@ -89,11 +94,13 @@
   .indice-link:hover { background: #c8e6d8; }
   .indice-link .ico { font-size: 1.2rem; }
 
+
   .seccion {
     padding: 28px 20px;
     border-bottom: 1px solid #e0dbd0;
   }
   .seccion:nth-child(even) { background: white; }
+
 
   .seccion-titulo {
     font-family: 'Playfair Display', serif;
@@ -104,6 +111,7 @@
     align-items: center;
     gap: 10px;
   }
+
 
   .casas-grid {
     display: grid;
@@ -134,11 +142,13 @@
   .casa-blanca .casa-header { background: #555; }
   .casa-marron .casa-header { background: #7d5229; }
 
+
   .casa-body {
     background: white;
     padding: 12px 14px;
     text-align: center;
   }
+  .promo-invierno { font-size:0.72rem; color:#b06000; background:#fff3e0; border-radius:20px; padding:0.2rem 0.7rem; display:inline-block; margin-top:0.2rem; margin-bottom:0.3rem; }
   .precio {
     font-size: 1.15rem;
     font-weight: 700;
@@ -180,6 +190,7 @@
   }
   .btn-calendario:hover { background: #3a9a6e; }
 
+
   .info-card {
     background: white;
     border-radius: 12px;
@@ -201,6 +212,7 @@
   .info-card ul { padding-left: 18px; }
   .info-card a { color: var(--verde); }
 
+
   .alerta {
     background: #fff3cd;
     border-left: 4px solid #f0a500;
@@ -212,6 +224,7 @@
   }
   .alerta strong { display: block; margin-bottom: 4px; }
 
+
   .horario-row {
     display: flex;
     justify-content: space-between;
@@ -221,6 +234,7 @@
   }
   .horario-row:last-child { border-bottom: none; }
   .horario-label { font-weight: 600; color: var(--verde); }
+
 
   .features {
     display: grid;
@@ -236,6 +250,7 @@
   }
   .feature-item .ico { font-size: 1.1rem; }
 
+
   .footer {
     background: var(--verde);
     color: white;
@@ -244,6 +259,7 @@
   }
   .footer p { font-size: 0.88rem; opacity: 0.8; margin-top: 8px; }
   .footer .redes { margin-top: 14px; font-size: 0.85rem; opacity: 0.75; }
+
 
   .volver-top {
     display: block;
@@ -254,6 +270,7 @@
     text-decoration: none;
     font-weight: 500;
   }
+
 
   .llevar-destacado {
     background: #fff3cd;
@@ -277,11 +294,13 @@
 </head>
 <body>
 
+
 <div class="header" id="inicio">
   <h1>🌿 Cabañas Caraguatá</h1>
   <p>Delta del Tigre · 4 cabañas completamente equipadas</p>
   <a href="https://wa.me/541158467707?text=Hola%20Rub%C3%A9n!%20Vi%20tu%20p%C3%A1gina%20de%20informaci%C3%B3n%20y%20quer%C3%ADa%20consultarte%20sobre%20las%20caba%C3%B1as%20%F0%9F%8F%A1%0A%0Ahttps%3A%2F%2Fcabanas-caraguata.github.io%2Fmi-calendario%2F" class="btn-wsp">📲 Consultar por WhatsApp</a>
 </div>
+
 
 <div class="indice">
   <h2>¿Qué querés saber?</h2>
@@ -299,10 +318,12 @@
   </div>
 </div>
 
+
 <!-- CASAS -->
 <div class="seccion" id="casas">
   <div class="seccion-titulo">🏠 Las casas</div>
   <div class="casas-grid">
+
 
     <div class="casa-card casa-verde">
       <div class="casa-header">
@@ -311,11 +332,13 @@
       </div>
       <div class="casa-body">
         <div class="precio">$60.000/día</div>
+        <div class="promo-invierno">🌿 Precio de invierno hasta el 18/09</div>
         <div class="minimo">Mínimo 2 días</div>
-        <a href="https://youtube.com/shorts/EoXGZr7dKPo" class="btn-fotos" target="_blank">📸 Ver fotos</a>
+        <a href="https://youtube.com/shorts/efFyyJ1_Byo" class="btn-fotos" target="_blank">📸 Ver fotos</a>
         <a href="https://cabanas-caraguata.github.io/mi-calendario/" class="btn-calendario" target="_blank">📅 Fechas disponibles</a>
       </div>
     </div>
+
 
     <div class="casa-card casa-roja">
       <div class="casa-header">
@@ -324,11 +347,13 @@
       </div>
       <div class="casa-body">
         <div class="precio">$90.000/día</div>
+        <div class="promo-invierno">🌿 Precio de invierno hasta el 18/09</div>
         <div class="minimo">Mínimo 2 días</div>
         <a href="https://youtube.com/shorts/wVFyko1i9Rs" class="btn-fotos" target="_blank">📸 Ver fotos</a>
         <a href="https://cabanas-caraguata.github.io/mi-calendario/" class="btn-calendario" target="_blank">📅 Fechas disponibles</a>
       </div>
     </div>
+
 
     <div class="casa-card casa-blanca">
       <div class="casa-header">
@@ -337,11 +362,13 @@
       </div>
       <div class="casa-body">
         <div class="precio">$65.000/día</div>
+        <div class="promo-invierno">🌿 Precio de invierno hasta el 18/09</div>
         <div class="minimo">Mínimo 2 días</div>
         <a href="https://youtube.com/shorts/7Z-oP_gHhSQ" class="btn-fotos" target="_blank">📸 Ver fotos</a>
         <a href="https://cabanas-caraguata.github.io/mi-calendario/" class="btn-calendario" target="_blank">📅 Fechas disponibles</a>
       </div>
     </div>
+
 
     <div class="casa-card casa-marron">
       <div class="casa-header">
@@ -350,13 +377,16 @@
       </div>
       <div class="casa-body">
         <div class="precio">$100.000/día</div>
+        <div class="promo-invierno">🌿 Precio de invierno hasta el 18/09</div>
         <div class="minimo">Mínimo 2 días</div>
         <a href="https://youtube.com/shorts/qXAL2El6i5A" class="btn-fotos" target="_blank">📸 Ver fotos</a>
         <a href="https://cabanas-caraguata.github.io/mi-calendario/" class="btn-calendario" target="_blank">📅 Fechas disponibles</a>
       </div>
     </div>
 
+
   </div>
+
 
   <div style="margin-top:16px;">
     <div class="seccion-titulo" style="font-size:1.1rem; margin-bottom:10px;">✨ Todas las casas tienen</div>
@@ -373,6 +403,7 @@
   </div>
 </div>
 
+
 <!-- UBICACIÓN -->
 <div class="seccion" id="ubicacion">
   <div class="seccion-titulo">📍 Ubicación</div>
@@ -384,9 +415,11 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- CÓMO LLEGAR -->
 <div class="seccion" id="llegar">
   <div class="seccion-titulo">🗺️ Cómo llegar</div>
+
 
   <div class="info-card">
     <h4>🚢 Lancha colectiva (opción más común)</h4>
@@ -399,6 +432,7 @@
     <p style="margin-top:6px;font-size:0.82rem;color:#888;">En la estación hay muchas opciones para dejar el auto</p>
   </div>
 
+
   <div class="info-card">
     <h4>🚤 Otra opción: Puerto Benavides</h4>
     <p>Podés llegar hasta la <strong>Guardería Puerto Benavides</strong> y dejar el auto adentro ($2.000/día)</p>
@@ -409,12 +443,14 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- HORARIOS -->
 <div class="seccion" id="horarios">
   <div class="seccion-titulo">🕐 Horarios de entrada y salida</div>
   <div class="info-card">
     <p>Podés entrar desde la <strong>primera lancha</strong> y salir con la última o en el horario que elijas.</p>
   </div>
+
 
   <div class="info-card">
     <h4>🟢 Salidas desde Tigre</h4>
@@ -423,6 +459,7 @@
     <div class="horario-row"><span class="horario-label">15:30</span><span></span></div>
     <div class="horario-row"><span class="horario-label">18:30</span><span>Última lancha</span></div>
   </div>
+
 
   <div class="info-card">
     <h4>🔴 Lanchas de regreso</h4>
@@ -438,9 +475,11 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- QUÉ LLEVAR -->
 <div class="seccion" id="llevar">
   <div class="seccion-titulo">🎒 ¿Qué llevar?</div>
+
 
   <div class="llevar-destacado">
     <h4>⚠️ MUY IMPORTANTE — No lo olvides</h4>
@@ -450,6 +489,7 @@
       <li>💧 Agua potable</li>
     </ul>
   </div>
+
 
   <div class="info-card">
     <h4>✅ Lista completa</h4>
@@ -463,6 +503,7 @@
     </ul>
   </div>
 
+
   <div class="info-card">
     <h4>🏡 Las casas ya incluyen</h4>
     <ul>
@@ -475,12 +516,14 @@
     </ul>
   </div>
 
+
   <div class="alerta">
     <strong>💡 Tip</strong>
     Si no querés viajar muy cargado, podés comprar carbón, agua y bebidas en la lancha almacén que pasa por el muelle.
   </div>
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
+
 
 <!-- CÓMO SEÑAR -->
 <div class="seccion" id="senar">
@@ -512,6 +555,7 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- LANCHA ALMACÉN -->
 <div class="seccion" id="almacen">
   <div class="seccion-titulo">🛒 Lancha almacén</div>
@@ -538,6 +582,7 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- KAYAKS -->
 <div class="seccion" id="kayaks">
   <div class="seccion-titulo">🚣 Alquiler de kayaks</div>
@@ -552,6 +597,7 @@
   </div>
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
+
 
 <!-- MASCOTAS -->
 <div class="seccion" id="mascotas">
@@ -572,6 +618,7 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- WIFI -->
 <div class="seccion" id="wifi">
   <div class="seccion-titulo">📶 Wifi e internet</div>
@@ -587,6 +634,7 @@
   <a href="#inicio" class="volver-top">↑ Volver al inicio</a>
 </div>
 
+
 <!-- FOOTER -->
 <div class="footer">
   <a href="https://wa.me/541158467707?text=Hola%20Rub%C3%A9n!%20Vi%20tu%20p%C3%A1gina%20de%20informaci%C3%B3n%20y%20quer%C3%ADa%20consultarte%20sobre%20las%20caba%C3%B1as%20%F0%9F%8F%A1%0A%0Ahttps%3A%2F%2Fcabanas-caraguata.github.io%2Fmi-calendario%2F" class="btn-wsp">📲 Reservar por WhatsApp</a>
@@ -595,6 +643,7 @@
     📸 @cabanascaraguata &nbsp;·&nbsp; 👍 Caraguatá Cabañas &nbsp;·&nbsp; 🎵 @cabanascaraguata
   </div>
 </div>
+
 
 </body>
 </html>

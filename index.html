@@ -209,7 +209,18 @@
     guardarReservas();
     renderRegistro();
     mostrarToast('Reserva guardada en registro');
+
+    // Abrir WhatsApp con resumen de la reserva
+    const entradaStr = sel.entrada.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const salidaStr = sel.salida.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const nombreCorto = cab.nombre.replace('Casa ','');
+    let msg = `${nombreCorto} ${entradaStr} al ${salidaStr}`;
+    if(tel) msg += `\nTel: ${tel}`;
+    if(notas) msg += `\nNotas: ${notas}`;
+    const waUrl = `https://wa.me/541158467707?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
   }
+
 
   function marcarOcupado(cabId) {
     const sel = seleccion[cabId];

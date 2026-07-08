@@ -60,6 +60,7 @@
   .registro-tabla { width:100%; border-collapse:collapse; font-size:0.75rem; min-width:600px; }
   .registro-tabla th { background:#f5f0e8; padding:0.5rem; text-align:left; border-bottom:1px solid #e0d8cc; font-weight:600; white-space:nowrap; }
   .registro-tabla td { padding:0.5rem; border-bottom:1px solid #f0ece4; vertical-align:top; }
+  .registro-tabla td:nth-child(2), .registro-tabla td:nth-child(3), .registro-tabla td:nth-child(4) { white-space:nowrap; min-width:3.2rem; }
   .registro-tabla tr:last-child td { border-bottom:none; }
   .registro-vacio { padding:1rem; text-align:center; color:#aaa; font-size:0.85rem; }
   .badge-saldo { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem; font-weight:600; }
@@ -187,6 +188,12 @@
 
   function mostrarToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
 
+  function fechaCorta(fechaStr){
+    if(!fechaStr) return "-";
+    const p = fechaStr.split("-");
+    return p[2] + "-" + p[1];
+  }
+
   function guardarOcupadas(){
     ocupadasRef.set(ocupadas)
       .then(()=>mostrarToast('Guardado'))
@@ -289,9 +296,9 @@
     fila.className='fila-edicion';
     fila.innerHTML=`
       <td>${r.cabana}</td>
-      <td>${r.fecha_registro?r.fecha_registro.split("-").reverse().join("-"):"-"}</td>
-      <td>${r.entrada.split("-").reverse().join("-")}</td>
-      <td>${r.salida.split("-").reverse().join("-")}</td>
+      <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td>
+      <td>${fechaCorta(r.entrada)}</td>
+      <td>${fechaCorta(r.salida)}</td>
       <td>${r.dias}</td>
       <td>${formatPrecio(r.total)}</td>
       <td><input id="edit-senia-${id}" type="number" value="${r.senia||0}"></td>
@@ -327,7 +334,7 @@
     reservas.forEach(r=>{
       const saldoOk=r.saldo<=0;
       html+=`<tr id="fila-${r.id}">
-        <td>${r.cabana}</td><td>${r.fecha_registro?r.fecha_registro.split("-").reverse().join("-"):"-"}</td><td>${r.entrada.split("-").reverse().join("-")}</td><td>${r.salida.split("-").reverse().join("-")}</td><td>${r.dias}</td>
+        <td>${r.cabana}</td><td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
         <td>${formatPrecio(r.total)}</td>
         <td>${formatPrecio(r.senia||0)}</td>
         <td><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>

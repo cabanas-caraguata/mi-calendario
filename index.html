@@ -104,6 +104,8 @@
 </div>
 <div class="guardado" id="toast">Guardado</div>
 <footer>Toca la fecha de entrada y luego la de salida para calcular el precio</footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   const WHATSAPP = "541158467707";
   const PASS = "1111";
@@ -112,6 +114,18 @@
   const CAL_URL = "https://cabanas-caraguata.github.io/mi-calendario/";
   const HORA_ENTRADA = "8:00 hs";
   const HORA_SALIDA = "18:30 hs";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASHU5d-e2a1cKunNyY-ivNKHx3cFCwqCQ",
+    authDomain: "cabanas-caraguata.firebaseapp.com",
+    projectId: "cabanas-caraguata",
+    storageBucket: "cabanas-caraguata.firebasestorage.app",
+    messagingSenderId: "1063147857447",
+    appId: "1:1063147857447:web:1275eb03c4360710271002"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const ocupadasRef = db.collection('calendario').doc('ocupadas');
 
   // Precios por temporada
   // Invierno: hasta 18 sep 2026
@@ -156,8 +170,8 @@
     return total;
   }
 
-  let ocupadas, reservas;
-  try { ocupadas = JSON.parse(localStorage.getItem(KEY)) || {verde:[],roja:[],blanca:[],marron:[]}; } catch(e) { ocupadas={verde:[],roja:[],blanca:[],marron:[]}; }
+  let ocupadas = {verde:[],roja:[],blanca:[],marron:[]};
+  let reservas;
   try { reservas = JSON.parse(localStorage.getItem(KEY_RES)) || []; } catch(e) { reservas=[]; }
 
   const hoy = new Date();
@@ -173,7 +187,11 @@
 
   function mostrarToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
 
-  function guardarOcupadas(){ try{localStorage.setItem(KEY,JSON.stringify(ocupadas));}catch(e){} mostrarToast('Guardado'); }
+  function guardarOcupadas(){
+    ocupadasRef.set(ocupadas)
+      .then(()=>mostrarToast('Guardado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
   function guardarReservas(){ try{localStorage.setItem(KEY_RES,JSON.stringify(reservas));}catch(e){} }
 
   function hayOcupadoEnRango(cabId,entrada,salida){ const ocp=ocupadas[cabId]||[]; let d=new Date(entrada); while(d<=salida){if(ocp.includes(clave(d)))return true;d=new Date(d.getTime()+86400000);} return false; }
@@ -482,6 +500,17 @@
   }
 
   renderizar();
+
+  ocupadasRef.onSnapshot((doc)=>{
+    if(doc.exists){
+      ocupadas = doc.data();
+      CABANAS.forEach(c=>renderizarCabana(c.id));
+    } else {
+      ocupadasRef.set({verde:[],roja:[],blanca:[],marron:[]});
+    }
+  }, (err)=>{
+    mostrarToast('Sin conexion a la base de datos');
+  });
 </script>
 </body>
 </html>

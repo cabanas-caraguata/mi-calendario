@@ -132,11 +132,11 @@
   const ocupadasRef = db.collection('calendario').doc('ocupadas');
 
   // Precios por temporada
-  // Invierno: hasta 5 sep 2026
+  // Invierno: hasta 4 sep 2026
   // Temporada media: 5 sep – 5 dic 2026
   const TEMPORADAS = [
     {
-      desde: new Date(2026, 9, 5), // 5 sep 2026
+      desde: new Date(2026, 8, 5), // 5 sep 2026
       hasta: null, // sin fecha de fin, hasta nuevo aviso
       precios: { verde: 75000, roja: 110000, blanca: 80000, marron: 150000 },
       label: "temporada media"

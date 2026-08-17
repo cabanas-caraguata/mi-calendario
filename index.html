@@ -63,6 +63,9 @@
   .registro-tabla td:nth-child(2), .registro-tabla td:nth-child(3), .registro-tabla td:nth-child(4) { white-space:nowrap; min-width:3.2rem; }
   .registro-tabla tr:last-child td { border-bottom:none; }
   .registro-vacio { padding:1rem; text-align:center; color:#aaa; font-size:0.85rem; }
+  .fila-superpuesta { background:#fdeceb !important; }
+  .fila-superpuesta td { color:#8b2a1a; font-weight:600; }
+  .aviso-superposicion { background:#e03030; color:#fff; padding:0.7rem 1rem; font-size:0.85rem; font-weight:600; text-align:center; }
   .badge-saldo { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem; font-weight:600; }
   .badge-ok { background:#d4ead7; color:#2d6e3a; }
   .badge-pendiente { background:#f0cdc8; color:#8b2a1a; }
@@ -252,16 +255,22 @@
     if (!sel.entrada || !sel.salida) return;
 
     // Primero marcar los días
+    const nuevasFechas = [];
     let d = new Date(sel.entrada);
     while (d <= sel.salida) {
       const k = clave(d);
       if (!(ocupadas[cabId] || []).includes(k)) {
         ocupadas[cabId] = ocupadas[cabId] || [];
         ocupadas[cabId].push(k);
+        nuevasFechas.push(k);
       }
       d = new Date(d.getTime() + 86400000);
     }
-    guardarOcupadas();
+    if (nuevasFechas.length) {
+      ocupadasRef.update({ [cabId]: firebase.firestore.FieldValue.arrayUnion(...nuevasFechas) })
+        .then(()=>mostrarToast('Guardado'))
+        .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+    }
 
     // Mostrar formulario para datos antes de cerrar
     const formRes = document.getElementById('form-' + cabId);
@@ -327,14 +336,31 @@
     renderRegistro();
   }
 
+  function detectarSuperposiciones(lista){
+    const superpuestos = new Set();
+    for(let i=0;i<lista.length;i++){
+      for(let j=i+1;j<lista.length;j++){
+        if(lista[i].cabana!==lista[j].cabana) continue;
+        if(lista[i].entrada<=lista[j].salida && lista[j].entrada<=lista[i].salida){
+          superpuestos.add(lista[i].id);
+          superpuestos.add(lista[j].id);
+        }
+      }
+    }
+    return superpuestos;
+  }
+
   function renderRegistro(){
     const body=document.getElementById('registro-body');
     if(!reservas.length){ body.innerHTML='<div class="registro-vacio">No hay reservas registradas</div>'; return; }
+    const ordenadas=[...reservas].sort((a,b)=> a.entrada<b.entrada?-1:a.entrada>b.entrada?1:0);
+    const superpuestos=detectarSuperposiciones(ordenadas);
     let html='<table class="registro-tabla"><thead><tr><th>Cabana</th><th>F.Reserva</th><th>Entrada</th><th>Salida</th><th>Dias</th><th>Total</th><th>Seña</th><th>Saldo</th><th>Tel</th><th>Notas</th><th></th></tr></thead><tbody>';
-    reservas.forEach(r=>{
+    ordenadas.forEach(r=>{
       const saldoOk=r.saldo<=0;
-      html+=`<tr id="fila-${r.id}">
-        <td>${r.cabana}</td><td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
+      const choca=superpuestos.has(r.id);
+      html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':''}>
+        <td>${choca?'⚠️ ':''}${r.cabana}</td><td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
         <td>${formatPrecio(r.total)}</td>
         <td>${formatPrecio(r.senia||0)}</td>
         <td><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
@@ -351,6 +377,7 @@
     const saldoG=reservas.reduce((s,r)=>s+r.saldo,0);
     html+=`<tr style="background:#f5f0e8;font-weight:700"><td colspan="5">TOTAL</td><td>${formatPrecio(totalG)}</td><td>${formatPrecio(seniaG)}</td><td>${formatPrecio(saldoG)}</td><td colspan="3"></td></tr>`;
     html+='</tbody></table>';
+    if(superpuestos.size) html='<div class="aviso-superposicion">⚠️ Hay reservas de una misma cabaña con fechas que se pisan. Revisá las filas marcadas.</div>'+html;
     body.innerHTML=html;
   }
 
@@ -392,7 +419,13 @@
       div.className=cls; div.textContent=d;
       if(!esPas) div.onclick=()=>{
         if(admin&&esOc){
-          if(confirm("Quitar este dia como ocupado?")){ ocupadas[cabId]=ocupadas[cabId].filter(x=>x!==k); guardarOcupadas(); renderizarCabana(cabId); }
+          if(confirm("Quitar este dia como ocupado?")){
+            ocupadas[cabId]=ocupadas[cabId].filter(x=>x!==k);
+            ocupadasRef.update({ [cabId]: firebase.firestore.FieldValue.arrayRemove(k) })
+              .then(()=>mostrarToast('Guardado'))
+              .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+            renderizarCabana(cabId);
+          }
           return;
         }
         if(!esOc){

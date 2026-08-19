@@ -221,6 +221,11 @@
     const cab = CABANAS.find(c => c.id === cabId);
     const sel = seleccion[cabId];
     if (!sel.entrada || !sel.salida) return;
+    const entradaK = clave(sel.entrada), salidaK = clave(sel.salida);
+    const yaExiste = reservas.some(r => r.cabana === cab.nombre && entradaK <= r.salida && r.entrada <= salidaK);
+    if (yaExiste) {
+      if (!confirm("Ya hay una reserva cargada para " + cab.nombre + " en fechas que se pisan con esta. ¿Guardar igual?")) return;
+    }
     const dias = diasEntre(sel.entrada, sel.salida) + 1;
     const total = calcularTotalRango(cabId, sel.entrada, sel.salida);
     const tel = document.getElementById('tel-' + cabId)?.value.trim() || '';
@@ -304,8 +309,8 @@
     if(!fila) return;
     fila.className='fila-edicion';
     fila.innerHTML=`
-      <td>${r.cabana}</td>
       <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td>
+      <td>${r.cabana.replace('Casa ','')}</td>
       <td>${fechaCorta(r.entrada)}</td>
       <td>${fechaCorta(r.salida)}</td>
       <td>${r.dias}</td>
@@ -355,12 +360,12 @@
     if(!reservas.length){ body.innerHTML='<div class="registro-vacio">No hay reservas registradas</div>'; return; }
     const ordenadas=[...reservas].sort((a,b)=> (b.fecha_registro||'')<(a.fecha_registro||'')?-1:(b.fecha_registro||'')>(a.fecha_registro||'')?1:0);
     const superpuestos=detectarSuperposiciones(ordenadas);
-    let html='<table class="registro-tabla"><thead><tr><th>Cabana</th><th>F.Reserva</th><th>Entrada</th><th>Salida</th><th>Dias</th><th>Total</th><th>Seña</th><th>Saldo</th><th>Tel</th><th>Notas</th><th></th></tr></thead><tbody>';
+    let html='<table class="registro-tabla"><thead><tr><th>F.Reserva</th><th>Cabana</th><th>Entrada</th><th>Salida</th><th>Dias</th><th>Total</th><th>Seña</th><th>Saldo</th><th>Tel</th><th>Notas</th><th></th></tr></thead><tbody>';
     ordenadas.forEach(r=>{
       const saldoOk=r.saldo<=0;
       const choca=superpuestos.has(r.id);
       html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':''}>
-        <td>${choca?'⚠️ ':''}${r.cabana}</td><td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
+        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${r.cabana.replace('Casa ','')}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
         <td>${formatPrecio(r.total)}</td>
         <td>${formatPrecio(r.senia||0)}</td>
         <td><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>

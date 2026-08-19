@@ -353,7 +353,7 @@
   function renderRegistro(){
     const body=document.getElementById('registro-body');
     if(!reservas.length){ body.innerHTML='<div class="registro-vacio">No hay reservas registradas</div>'; return; }
-    const ordenadas=[...reservas].sort((a,b)=> a.entrada<b.entrada?-1:a.entrada>b.entrada?1:0);
+    const ordenadas=[...reservas].sort((a,b)=> (b.fecha_registro||'')<(a.fecha_registro||'')?-1:(b.fecha_registro||'')>(a.fecha_registro||'')?1:0);
     const superpuestos=detectarSuperposiciones(ordenadas);
     let html='<table class="registro-tabla"><thead><tr><th>Cabana</th><th>F.Reserva</th><th>Entrada</th><th>Salida</th><th>Dias</th><th>Total</th><th>Seña</th><th>Saldo</th><th>Tel</th><th>Notas</th><th></th></tr></thead><tbody>';
     ordenadas.forEach(r=>{
@@ -543,11 +543,12 @@
 
   ocupadasRef.onSnapshot((doc)=>{
     if(doc.exists){
-      ocupadas = doc.data();
+      ocupadas = Object.assign({verde:[],roja:[],blanca:[],marron:[]}, doc.data());
       CABANAS.forEach(c=>renderizarCabana(c.id));
-    } else {
-      ocupadasRef.set({verde:[],roja:[],blanca:[],marron:[]});
     }
+    // Si el documento no existe (o la lectura viene de una cache local desactualizada
+    // por un corte de conexion), NUNCA se reescribe la base de datos desde aca.
+    // Solo se marcan fechas cuando el usuario lo hace explicitamente con arrayUnion/arrayRemove.
   }, (err)=>{
     mostrarToast('Sin conexion a la base de datos');
   });

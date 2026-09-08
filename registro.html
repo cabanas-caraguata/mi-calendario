@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabañas Caraguatá – Registro de Reservas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+  :root { --fondo:#f5f0e8; --texto:#2a2218; --agua:#a8c5c0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',sans-serif; background:var(--fondo); color:var(--texto); min-height:100vh; padding-bottom:3rem; }
+  header { background:var(--texto); color:#f0ece4; padding:1.8rem 1.5rem 1.3rem; text-align:center; }
+  header h1 { font-family:'Playfair Display',serif; font-size:1.7rem; margin-bottom:0.3rem; }
+  header p { font-size:0.8rem; color:var(--agua); letter-spacing:0.06em; text-transform:uppercase; }
+  .contenedor { max-width:1000px; margin:0 auto; padding:1.2rem; }
+  .barra-superior { display:flex; flex-wrap:wrap; gap:0.7rem; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
+  .barra-superior a { color:var(--texto); font-size:0.85rem; text-decoration:underline; }
+  .btn-excel { background:var(--texto); color:#f0ece4; border:none; padding:0.6rem 1.1rem; border-radius:8px; font-size:0.85rem; cursor:pointer; font-family:'Inter',sans-serif; }
+  .resumen { background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1rem 1.3rem; margin-bottom:1.2rem; display:flex; flex-wrap:wrap; gap:1.5rem; }
+  .resumen div { font-size:0.8rem; color:#8a7f6e; }
+  .resumen strong { display:block; font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--texto); margin-top:0.1rem; }
+  .aviso { background:#e03030; color:#fff; padding:0.7rem 1rem; border-radius:10px; font-size:0.85rem; font-weight:600; text-align:center; margin-bottom:1.2rem; }
+  .tarjeta { background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1rem 1.3rem; margin-bottom:0.9rem; }
+  .tarjeta.choca { background:#fdeceb; border-color:#e5b3ac; }
+  .tarjeta-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid #f0ece4; }
+  .tarjeta-cabana { font-family:'Playfair Display',serif; font-size:1.25rem; }
+  .tarjeta-fechas { font-size:0.95rem; color:#5a5044; }
+  .tarjeta-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:0.6rem 1rem; font-size:0.85rem; }
+  .tarjeta-grid .etiqueta { color:#8a7f6e; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+  .tarjeta-grid .valor { font-weight:600; }
+  .badge-ok { color:#2d7a3a; }
+  .badge-pendiente { color:#b02a2a; }
+  .vacio { text-align:center; color:#aaa; padding:2rem; font-size:0.9rem; }
+  #login { max-width:320px; margin:4rem auto; background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1.5rem; text-align:center; }
+  #login input { width:100%; padding:0.6rem; margin:0.8rem 0; border:1px solid #ccc; border-radius:8px; font-size:1rem; text-align:center; }
+  #login button { background:var(--texto); color:#f0ece4; border:none; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; font-size:0.9rem; }
+  #contenido { display:none; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2 style="font-family:'Playfair Display',serif;">Registro de Reservas</h2>
+  <p style="font-size:0.8rem;color:#8a7f6e;margin-top:0.4rem;">Ingresá la contraseña de administrador</p>
+  <input type="password" id="pass-input" placeholder="Contraseña">
+  <button onclick="intentarLogin()">Entrar</button>
+</div>
+
+<div id="contenido">
+  <header>
+    <h1>Cabañas Caraguatá</h1>
+    <p>Registro de reservas</p>
+  </header>
+  <div class="contenedor">
+    <div class="barra-superior">
+      <a href="https://cabanas-caraguata.github.io/mi-calendario/">← Volver al calendario</a>
+      <button class="btn-excel" onclick="exportarExcel()">Exportar Excel</button>
+    </div>
+    <div class="resumen" id="resumen"></div>
+    <div id="aviso-contenedor"></div>
+    <div id="lista"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const PASS = "1111";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASHU5d-e2a1cKunNyY-ivNKHx3cFCwqCQ",
+    authDomain: "cabanas-caraguata.firebaseapp.com",
+    projectId: "cabanas-caraguata",
+    storageBucket: "cabanas-caraguata.firebasestorage.app",
+    messagingSenderId: "1063147857447",
+    appId: "1:1063147857447:web:1275eb03c4360710271002"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const reservasRef = db.collection('calendario').doc('_reservas').collection('items');
+
+  let reservas = [];
+
+  function intentarLogin(){
+    const p = document.getElementById('pass-input').value;
+    if (p !== PASS) { alert('Contraseña incorrecta.'); return; }
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+    escucharReservas();
+  }
+  document.getElementById('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') intentarLogin(); });
+
+  function fechaCorta(fechaStr){
+    if(!fechaStr) return "-";
+    const p = fechaStr.split("-");
+    return p[2] + "-" + p[1];
+  }
+
+  function formatPrecio(n){
+    return '$' + Math.round(n||0).toLocaleString('es-AR');
+  }
+
+  function detectarSuperposiciones(lista){
+    const superpuestos = new Set();
+    for(let i=0;i<lista.length;i++){
+      for(let j=i+1;j<lista.length;j++){
+        if(lista[i].cabana!==lista[j].cabana) continue;
+        if(lista[i].entrada<=lista[j].salida && lista[j].entrada<=lista[i].salida){
+          superpuestos.add(lista[i].id);
+          superpuestos.add(lista[j].id);
+        }
+      }
+    }
+    return superpuestos;
+  }
+
+  function render(){
+    const lista = document.getElementById('lista');
+    const resumen = document.getElementById('resumen');
+    const avisoCont = document.getElementById('aviso-contenedor');
+
+    if(!reservas.length){
+      lista.innerHTML = '<div class="vacio">No hay reservas registradas todavía</div>';
+      resumen.innerHTML = '';
+      avisoCont.innerHTML = '';
+      return;
+    }
+
+    const ordenadas = [...reservas].sort((a,b)=> (b.fecha_registro||'')<(a.fecha_registro||'')?-1:(b.fecha_registro||'')>(a.fecha_registro||'')?1:0);
+    const superpuestos = detectarSuperposiciones(ordenadas);
+
+    const totalG = reservas.reduce((s,r)=>s+r.total,0);
+    const seniaG = reservas.reduce((s,r)=>s+(r.senia||0),0);
+    const saldoG = reservas.reduce((s,r)=>s+r.saldo,0);
+    resumen.innerHTML = `
+      <div>Reservas<strong>${reservas.length}</strong></div>
+      <div>Total<strong>${formatPrecio(totalG)}</strong></div>
+      <div>Señas cobradas<strong>${formatPrecio(seniaG)}</strong></div>
+      <div>Saldo pendiente<strong>${formatPrecio(saldoG)}</strong></div>
+    `;
+
+    avisoCont.innerHTML = superpuestos.size
+      ? '<div class="aviso">⚠️ Hay reservas de una misma cabaña con fechas que se pisan. Revisá las tarjetas marcadas.</div>'
+      : '';
+
+    lista.innerHTML = ordenadas.map(r => {
+      const saldoOk = r.saldo <= 0;
+      const choca = superpuestos.has(r.id);
+      return `
+        <div class="tarjeta${choca?' choca':''}">
+          <div class="tarjeta-top">
+            <div class="tarjeta-cabana">${choca?'⚠️ ':''}${r.cabana}</div>
+            <div class="tarjeta-fechas">${fechaCorta(r.entrada)} → ${fechaCorta(r.salida)} · ${r.dias} día${r.dias>1?'s':''}</div>
+          </div>
+          <div class="tarjeta-grid">
+            <div><div class="etiqueta">Cargada</div><div class="valor">${r.fecha_registro?fechaCorta(r.fecha_registro):'-'}</div></div>
+            <div><div class="etiqueta">Total</div><div class="valor">${formatPrecio(r.total)}</div></div>
+            <div><div class="etiqueta">Seña</div><div class="valor">${formatPrecio(r.senia||0)}</div></div>
+            <div><div class="etiqueta">Saldo</div><div class="valor ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</div></div>
+            <div><div class="etiqueta">Tel</div><div class="valor">${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'')}" target="_blank">${r.tel}</a>`:'-'}</div></div>
+            <div><div class="etiqueta">Notas</div><div class="valor">${r.notas||'-'}</div></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escucharReservas(){
+    reservasRef.onSnapshot((snap) => {
+      reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      render();
+    }, (err) => {
+      document.getElementById('lista').innerHTML = '<div class="vacio">Sin conexión al registro de reservas</div>';
+    });
+  }
+
+  function exportarExcel(){
+    if(!reservas.length){ alert("No hay reservas para exportar."); return; }
+    let csv="Cabana,F.Reserva,Entrada,Salida,Dias,Total,Senia,Saldo,Telefono,Notas\n";
+    reservas.forEach(r=>{ csv+=`${r.cabana},${r.fecha_registro||""},${r.entrada.split("-").reverse().join("-")},${r.salida.split("-").reverse().join("-")},${r.dias},${r.total},${r.senia||0},${r.saldo},${r.tel||''},${(r.notas||'').replace(/,/g,' ')}\n`; });
+    const totalG=reservas.reduce((s,r)=>s+r.total,0);
+    csv+=`\nTOTAL,,,, ${totalG}\n`;
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='reservas-caraguata.csv'; a.click(); URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

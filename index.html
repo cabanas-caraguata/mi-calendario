@@ -62,6 +62,20 @@
   .registro-tabla td { padding:0.5rem; border-bottom:1px solid #f0ece4; vertical-align:top; }
   .registro-tabla td:nth-child(2), .registro-tabla td:nth-child(3), .registro-tabla td:nth-child(4) { white-space:nowrap; min-width:3.2rem; }
   .registro-tabla tr:last-child td { border-bottom:none; }
+
+  @media (max-width: 700px) {
+    .registro-tabla { min-width:0; font-size:0.85rem; }
+    .registro-tabla thead { display:none; }
+    .registro-tabla, .registro-tabla tbody, .registro-tabla tr, .registro-tabla td { display:block; width:100%; }
+    .registro-tabla tr { border:1px solid #e0d8cc; border-radius:10px; margin-bottom:0.7rem; padding:0.5rem 0.8rem; background:#fff; }
+    .registro-tabla tr.fila-superpuesta { background:#fdeceb; }
+    .registro-tabla td { border-bottom:none; padding:0.25rem 0; white-space:normal !important; min-width:0 !important; }
+    .registro-tabla td:before { content: attr(data-label); font-weight:600; color:#8a7f6e; display:inline-block; min-width:6rem; }
+    .registro-tabla td:first-child { font-weight:700; font-size:1rem; color:var(--texto); display:inline-block; margin-right:0.5rem; }
+    .registro-tabla td:first-child:before { content:none; }
+    .registro-tabla td:nth-child(2) { font-weight:700; font-size:1rem; color:var(--texto); display:inline-block; }
+    .registro-tabla td:nth-child(2):before { content:none; }
+  }
   .registro-vacio { padding:1rem; text-align:center; color:#aaa; font-size:0.85rem; }
   .fila-superpuesta { background:#fdeceb !important; }
   .fila-superpuesta td { color:#8b2a1a; font-weight:600; }
@@ -96,7 +110,10 @@
   <div class="registro-panel">
     <div class="registro-header">
       <h3>Registro de Reservas</h3>
-      <button onclick="exportarExcel()">Exportar Excel</button>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <a href="registro.html" target="_blank" style="background:var(--texto);color:#f0ece4;border:none;padding:0.5rem 0.9rem;border-radius:8px;font-size:0.8rem;text-decoration:none;font-family:'Inter',sans-serif;display:inline-block">Ver más grande</a>
+        <button onclick="exportarExcel()">Exportar Excel</button>
+      </div>
     </div>
     <div class="registro-scroll">
       <div id="registro-body"></div>
@@ -114,7 +131,6 @@
   const WHATSAPP = "541158467707";
   const PASS = "1111";
   const KEY = "caraguata_ocupadas";
-  const KEY_RES = "caraguata_reservas";
   const CAL_URL = "https://cabanas-caraguata.github.io/mi-calendario/";
   const HORA_ENTRADA = "8:00 hs";
   const HORA_SALIDA = "18:30 hs";
@@ -130,6 +146,7 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const ocupadasRef = db.collection('calendario').doc('ocupadas');
+  const reservasRef = db.collection('calendario').doc('_reservas').collection('items');
 
   // Precios por temporada
   // Invierno: hasta 4 sep 2026
@@ -175,8 +192,7 @@
   }
 
   let ocupadas = {verde:[],roja:[],blanca:[],marron:[]};
-  let reservas;
-  try { reservas = JSON.parse(localStorage.getItem(KEY_RES)) || []; } catch(e) { reservas=[]; }
+  let reservas = [];
 
   const hoy = new Date();
   let meses={}, seleccion={};
@@ -202,7 +218,6 @@
       .then(()=>mostrarToast('Guardado'))
       .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
   }
-  function guardarReservas(){ try{localStorage.setItem(KEY_RES,JSON.stringify(reservas));}catch(e){} }
 
   function hayOcupadoEnRango(cabId,entrada,salida){ const ocp=ocupadas[cabId]||[]; let d=new Date(entrada); while(d<=salida){if(ocp.includes(clave(d)))return true;d=new Date(d.getTime()+86400000);} return false; }
 
@@ -233,15 +248,14 @@
     const notas = document.getElementById('notas-' + cabId)?.value.trim() || '';
     const saldo = total - senia;
     const reserva = {
-      id: Date.now(), cabana: cab.nombre,
+      cabana: cab.nombre,
       entrada: clave(sel.entrada), salida: clave(sel.salida),
       dias, total, tel, senia, saldo, notas,
       fecha_registro: clave(hoy)
     };
-    reservas.push(reserva);
-    guardarReservas();
-    renderRegistro();
-    mostrarToast('Reserva guardada en registro');
+    reservasRef.add(reserva)
+      .then(()=>mostrarToast('Reserva guardada en registro'))
+      .catch(()=>mostrarToast('Error al guardar la reserva, revisa tu conexion'));
 
     // Abrir WhatsApp con resumen de la reserva
     const entradaStr = sel.entrada.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
@@ -298,8 +312,9 @@
 
   function eliminarReserva(id){
     if(!confirm("Eliminar esta reserva?")) return;
-    reservas=reservas.filter(r=>r.id!==id);
-    guardarReservas(); renderRegistro();
+    reservasRef.doc(id).delete()
+      .then(()=>mostrarToast('Reserva eliminada'))
+      .catch(()=>mostrarToast('Error al eliminar, revisa tu conexion'));
   }
 
   function editarReserva(id){
@@ -311,16 +326,16 @@
     fila.innerHTML=`
       <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td>
       <td>${r.cabana.replace('Casa ','')}</td>
-      <td>${fechaCorta(r.entrada)}</td>
-      <td>${fechaCorta(r.salida)}</td>
-      <td>${r.dias}</td>
-      <td>${formatPrecio(r.total)}</td>
-      <td><input id="edit-senia-${id}" type="number" value="${r.senia||0}"></td>
+      <td data-label="Entrada">${fechaCorta(r.entrada)}</td>
+      <td data-label="Salida">${fechaCorta(r.salida)}</td>
+      <td data-label="Dias">${r.dias}</td>
+      <td data-label="Total"><input id="edit-total-${id}" type="number" value="${r.total}"></td>
+      <td data-label="Seña"><input id="edit-senia-${id}" type="number" value="${r.senia||0}"></td>
       <td></td>
-      <td><input id="edit-tel-${id}" type="tel" value="${r.tel||''}"></td>
-      <td><input id="edit-notas-${id}" type="text" value="${r.notas||''}"></td>
+      <td data-label="Tel"><input id="edit-tel-${id}" type="tel" value="${r.tel||''}"></td>
+      <td data-label="Notas"><input id="edit-notas-${id}" type="text" value="${r.notas||''}"></td>
       <td>
-        <button class="btn-guardar-edicion" onclick="guardarEdicion(${id})">OK</button>
+        <button class="btn-guardar-edicion" onclick="guardarEdicion('${id}')">OK</button>
         <button class="btn-cancelar-edicion" onclick="renderRegistro()">X</button>
       </td>
     `;
@@ -329,16 +344,14 @@
   function guardarEdicion(id){
     const r=reservas.find(x=>x.id===id);
     if(!r) return;
+    const total=parseFloat(document.getElementById('edit-total-'+id)?.value)||r.total;
     const senia=parseFloat(document.getElementById('edit-senia-'+id)?.value)||0;
     const tel=document.getElementById('edit-tel-'+id)?.value.trim()||'';
     const notas=document.getElementById('edit-notas-'+id)?.value.trim()||'';
-    r.senia=senia;
-    r.saldo=r.total-senia;
-    r.tel=tel;
-    r.notas=notas;
-    guardarReservas();
-    mostrarToast('Reserva actualizada');
-    renderRegistro();
+    const saldo=total-senia;
+    reservasRef.doc(id).update({ total, senia, saldo, tel, notas })
+      .then(()=>mostrarToast('Reserva actualizada'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
   }
 
   function detectarSuperposiciones(lista){
@@ -365,15 +378,15 @@
       const saldoOk=r.saldo<=0;
       const choca=superpuestos.has(r.id);
       html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':''}>
-        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${r.cabana.replace('Casa ','')}</td><td>${fechaCorta(r.entrada)}</td><td>${fechaCorta(r.salida)}</td><td>${r.dias}</td>
-        <td>${formatPrecio(r.total)}</td>
-        <td>${formatPrecio(r.senia||0)}</td>
-        <td><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
-        <td>${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'')}" target="_blank">${r.tel}</a>`:'-'}</td>
-        <td>${r.notas||'-'}</td>
+        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
+        <td data-label="Total">${formatPrecio(r.total)}</td>
+        <td data-label="Seña">${formatPrecio(r.senia||0)}</td>
+        <td data-label="Saldo"><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
+        <td data-label="Tel">${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'')}" target="_blank">${r.tel}</a>`:'-'}</td>
+        <td data-label="Notas">${r.notas||'-'}</td>
         <td>
-          <button class="btn-editar" onclick="editarReserva(${r.id})">✏️</button>
-          <button class="btn-eliminar" onclick="eliminarReserva(${r.id})">X</button>
+          <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
+          <button class="btn-eliminar" onclick="eliminarReserva('${r.id}')">X</button>
         </td>
       </tr>`;
     });
@@ -556,6 +569,13 @@
     // Solo se marcan fechas cuando el usuario lo hace explicitamente con arrayUnion/arrayRemove.
   }, (err)=>{
     mostrarToast('Sin conexion a la base de datos');
+  });
+
+  reservasRef.onSnapshot((snap)=>{
+    reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    if (admin) renderRegistro();
+  }, (err)=>{
+    mostrarToast('Sin conexion al registro de reservas');
   });
 </script>
 </body>

@@ -110,6 +110,44 @@
 <div class="cabanas-grid" id="cabanas-grid"></div>
 <div id="registro-contenedor" style="display:none">
   <div class="registro-panel">
+    <div class="registro-header" style="cursor:pointer" onclick="toggleFormManual()">
+      <h3>+ Cargar reserva manual (sin marcar calendario)</h3>
+      <span id="flecha-manual">▾</span>
+    </div>
+    <div id="form-manual" style="display:none;padding:1rem;background:#fffbe8;border-bottom:1px solid #e0d8cc">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:0.6rem">
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Cabaña</label>
+          <select id="manual-cabana" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px"></select>
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Entrada</label>
+          <input id="manual-entrada" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Salida</label>
+          <input id="manual-salida" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Total ($)</label>
+          <input id="manual-total" type="number" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Seña ($)</label>
+          <input id="manual-senia" type="number" value="0" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Teléfono</label>
+          <input id="manual-tel" type="tel" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="font-size:0.72rem;color:#8a7f6e">Notas</label>
+          <input id="manual-notas" type="text" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+      </div>
+      <button onclick="guardarReservaManual()" style="background:var(--texto);color:#f0ece4;border:none;padding:0.6rem 1.1rem;border-radius:8px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif">Guardar reserva</button>
+      <div style="font-size:0.7rem;color:#8a7f6e;margin-top:0.5rem">Esto solo agrega la reserva al registro. No toca ni marca ninguna fecha en el calendario.</div>
+    </div>
     <div class="registro-header">
       <h3>Registro de Reservas</h3>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -228,8 +266,55 @@
     admin=!admin;
     document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
     document.getElementById('registro-contenedor').style.display=admin?'block':'none';
-    if(admin) renderRegistro();
+    if(admin){
+      renderRegistro();
+      const sel=document.getElementById('manual-cabana');
+      if(sel && !sel.options.length) CABANAS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
+    }
     renderizar();
+  }
+
+  function toggleFormManual(){
+    const f=document.getElementById('form-manual');
+    const fl=document.getElementById('flecha-manual');
+    const abierto = f.style.display==='block';
+    f.style.display = abierto?'none':'block';
+    fl.textContent = abierto?'▾':'▴';
+  }
+
+  function guardarReservaManual(){
+    const cabId=document.getElementById('manual-cabana').value;
+    const cab=CABANAS.find(c=>c.id===cabId);
+    const entradaStr=document.getElementById('manual-entrada').value;
+    const salidaStr=document.getElementById('manual-salida').value;
+    const total=parseFloat(document.getElementById('manual-total').value)||0;
+    const senia=parseFloat(document.getElementById('manual-senia').value)||0;
+    const tel=document.getElementById('manual-tel').value.trim();
+    const notas=document.getElementById('manual-notas').value.trim();
+    if(!entradaStr || !salidaStr){ alert("Completá entrada y salida."); return; }
+    if(salidaStr<entradaStr){ alert("La salida no puede ser antes que la entrada."); return; }
+    const dias = diasEntre(new Date(entradaStr+'T00:00:00'), new Date(salidaStr+'T00:00:00')) || 1;
+    const yaExiste = reservas.some(r => r.cabana===cab.nombre && entradaStr<=r.salida && r.entrada<=salidaStr);
+    if(yaExiste){
+      if(!confirm("Ya hay una reserva cargada para "+cab.nombre+" en fechas que se pisan con esta. ¿Guardar igual?")) return;
+    }
+    const reserva = {
+      cabana: cab.nombre,
+      entrada: entradaStr, salida: salidaStr,
+      dias, total, tel, senia, saldo: total-senia, notas,
+      fecha_registro: clave(hoy)
+    };
+    reservasRef.add(reserva)
+      .then(()=>{
+        mostrarToast('Reserva agregada al registro');
+        document.getElementById('manual-entrada').value='';
+        document.getElementById('manual-salida').value='';
+        document.getElementById('manual-total').value='';
+        document.getElementById('manual-senia').value='0';
+        document.getElementById('manual-tel').value='';
+        document.getElementById('manual-notas').value='';
+      })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
   }
 
   function cambiarMesCabana(id,d){ meses[id]=new Date(meses[id].getFullYear(),meses[id].getMonth()+d,1); renderizarCabana(id); }

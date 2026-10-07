@@ -148,6 +148,25 @@
       <button onclick="guardarReservaManual()" style="background:var(--texto);color:#f0ece4;border:none;padding:0.6rem 1.1rem;border-radius:8px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif">Guardar reserva</button>
       <div style="font-size:0.7rem;color:#8a7f6e;margin-top:0.5rem">Esto solo agrega la reserva al registro. No toca ni marca ninguna fecha en el calendario.</div>
     </div>
+    <div class="registro-header" style="cursor:pointer" onclick="toggleFeriadosPanel()">
+      <h3>Feriados largos (precio de fin de semana)</h3>
+      <span id="flecha-feriados">▾</span>
+    </div>
+    <div id="panel-feriados" style="display:none;padding:1rem;background:#eef6f1;border-bottom:1px solid #e0d8cc">
+      <div style="font-size:0.78rem;color:#5a5044;margin-bottom:0.7rem">En estas fechas, si alguien reserva menos dias que el feriado completo, se cobra un dia adicional (los sabados y domingos comunes ya funcionan solos, no hay que cargarlos).</div>
+      <div id="lista-feriados" style="margin-bottom:0.8rem"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:0.6rem">
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Primer dia del feriado largo</label>
+          <input id="fer-desde" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Ultimo dia</label>
+          <input id="fer-hasta" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+      </div>
+      <button onclick="agregarFeriado()" style="background:var(--texto);color:#f0ece4;border:none;padding:0.6rem 1.1rem;border-radius:8px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif">Agregar feriado largo</button>
+    </div>
     <div class="registro-header">
       <h3>Registro de Reservas</h3>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -187,6 +206,7 @@
   const db = firebase.firestore();
   const ocupadasRef = db.collection('calendario').doc('ocupadas');
   const reservasRef = db.collection('calendario').doc('_reservas').collection('items');
+  const feriadosRef = db.collection('calendario').doc('feriados');
 
   // Precios por temporada
   // Invierno: hasta 4 sep 2026
@@ -221,14 +241,81 @@
     return '$' + hoyP.toLocaleString('es-AR') + '/dia';
   }
 
+  // ---------------------------------------------------------------
+  // FINES DE SEMANA Y FERIADOS LARGOS
+  // Regla: dentro de un "bloque" (un feriado largo, o un sabado+domingo),
+  // se cobra un dia MAS de los que se reservan, hasta el tope del bloque.
+  //   Finde comun (2 dias): 1 dia -> se cobra 2 | 2 dias -> 2
+  //   Feriado de 3 dias:    1 dia -> 2 | 2 dias -> 3 | 3 dias -> 3
+  // Las fechas de los feriados se pueden agregar/quitar desde el modo admin.
+  // Estas son las fechas verificadas (oct-dic 2026); se usan mientras no haya
+  // una lista guardada en la nube.
+  // ---------------------------------------------------------------
+  const FERIADOS_BASE = [
+    { desde:"2026-10-10", hasta:"2026-10-12" },  // Dia del Respeto a la Diversidad Cultural (sab-lun)
+    { desde:"2026-11-07", hasta:"2026-11-09" },  // Feriado nacional visita del Papa (sab-lun)
+    { desde:"2026-11-21", hasta:"2026-11-23" },  // Dia de la Soberania Nacional trasladado (sab-lun)
+    { desde:"2026-12-05", hasta:"2026-12-08" },  // Inmaculada Concepcion + lunes 7 no laborable (sab-mar)
+    { desde:"2026-12-25", hasta:"2026-12-27" }   // Navidad (vie-dom)
+  ];
+  let feriadosNube = null; // null = todavia no hay lista guardada en la nube
+
+  function getFeriados(){
+    return feriadosNube ? feriadosNube : FERIADOS_BASE;
+  }
+
+  function sumarDias(f, n){ return new Date(f.getFullYear(), f.getMonth(), f.getDate()+n); }
+
+  // Devuelve la lista de fechas (Date) del bloque al que pertenece "f", o null si es un dia normal
+  function bloqueDe(f){
+    const k = clave(f);
+    for(const b of getFeriados()){
+      if(k>=b.desde && k<=b.hasta){
+        const dias=[];
+        let d=new Date(b.desde+'T00:00:00');
+        const fin=new Date(b.hasta+'T00:00:00');
+        while(d<=fin){ dias.push(d); d=sumarDias(d,1); }
+        return dias;
+      }
+    }
+    const dow=f.getDay();
+    if(dow===6) return [new Date(f.getFullYear(),f.getMonth(),f.getDate()), sumarDias(f,1)];
+    if(dow===0) return [sumarDias(f,-1), new Date(f.getFullYear(),f.getMonth(),f.getDate())];
+    return null;
+  }
+
+  // Recargo = precio de un dia mas por cada bloque que quede incompleto
+  function calcularRecargo(cabId, entrada, salida) {
+    const bloques = {};
+    let d = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
+    while (d <= salida) {
+      const bl = bloqueDe(d);
+      if (bl) {
+        const id = clave(bl[0]);
+        if (!bloques[id]) bloques[id] = { dias: bl, elegidos: new Set() };
+        bloques[id].elegidos.add(clave(d));
+      }
+      d = sumarDias(d, 1);
+    }
+    let monto = 0, cantidad = 0;
+    Object.values(bloques).forEach(b => {
+      if (b.elegidos.size < b.dias.length) {
+        const libres = b.dias.filter(x => !b.elegidos.has(clave(x)));
+        monto += Math.max(...libres.map(x => getPrecio(cabId, x)));
+        cantidad++;
+      }
+    });
+    return { monto, cantidad };
+  }
+
   function calcularTotalRango(cabId, entrada, salida) {
     let total = 0;
-    let d = new Date(entrada);
+    let d = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
     while (d <= salida) {
       total += getPrecio(cabId, d);
-      d = new Date(d.getTime() + 86400000);
+      d = sumarDias(d, 1);
     }
-    return total;
+    return total + calcularRecargo(cabId, entrada, salida).monto;
   }
 
   let ocupadas = {verde:[],roja:[],blanca:[],marron:[]};
@@ -272,6 +359,58 @@
       if(sel && !sel.options.length) CABANAS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
     }
     renderizar();
+  }
+
+  function toggleFeriadosPanel(){
+    const f=document.getElementById('panel-feriados');
+    const fl=document.getElementById('flecha-feriados');
+    const abierto = f.style.display==='block';
+    f.style.display = abierto?'none':'block';
+    fl.textContent = abierto?'▾':'▴';
+    if(!abierto) renderFeriadosAdmin();
+  }
+
+  function renderFeriadosAdmin(){
+    const cont=document.getElementById('lista-feriados');
+    if(!cont) return;
+    const hoyK=clave(hoy);
+    const vigentes=[...getFeriados()].filter(b=>b.hasta>=hoyK).sort((a,b)=>a.desde<b.desde?-1:1);
+    if(!vigentes.length){ cont.innerHTML='<div style="font-size:0.8rem;color:#8a7f6e">No hay feriados largos cargados.</div>'; return; }
+    const fmt=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'});
+    cont.innerHTML=vigentes.map(b=>{
+      const n=Math.round((new Date(b.hasta+'T00:00:00')-new Date(b.desde+'T00:00:00'))/86400000)+1;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #d6e5dc;border-radius:8px;padding:0.5rem 0.7rem;margin-bottom:0.4rem;font-size:0.85rem">
+        <span>${fmt(b.desde)} → ${fmt(b.hasta)} · ${n} dias</span>
+        <button class="btn-eliminar" onclick="quitarFeriado('${b.desde}','${b.hasta}')">X</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Al primer cambio se guarda tambien la lista base, para que no se pierda ninguna fecha
+  function listaParaGuardar(){
+    return feriadosNube ? [] : FERIADOS_BASE;
+  }
+
+  function agregarFeriado(){
+    const desde=document.getElementById('fer-desde').value;
+    const hasta=document.getElementById('fer-hasta').value;
+    if(!desde||!hasta){ alert("Completá el primer y el ultimo dia."); return; }
+    if(hasta<desde){ alert("El ultimo dia no puede ser antes que el primero."); return; }
+    const nuevos=[...listaParaGuardar(), {desde,hasta}];
+    feriadosRef.set({ bloques: firebase.firestore.FieldValue.arrayUnion(...nuevos) }, { merge:true })
+      .then(()=>{ mostrarToast('Feriado agregado'); document.getElementById('fer-desde').value=''; document.getElementById('fer-hasta').value=''; })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function quitarFeriado(desde,hasta){
+    if(!confirm("Quitar este feriado largo?")) return;
+    const base=listaParaGuardar();
+    const op = base.length
+      ? feriadosRef.set({ bloques: firebase.firestore.FieldValue.arrayUnion(...base) }, { merge:true })
+      : Promise.resolve();
+    op.then(()=>feriadosRef.update({ bloques: firebase.firestore.FieldValue.arrayRemove({desde,hasta}) }))
+      .then(()=>mostrarToast('Feriado quitado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
   }
 
   function toggleFormManual(){
@@ -563,11 +702,13 @@
     if(sel.entrada&&sel.salida){
       const dias=diasEntre(sel.entrada,sel.salida)+1;
       const total=calcularTotalRango(cabId,sel.entrada,sel.salida);
+      const rec=calcularRecargo(cabId,sel.entrada,sel.salida);
       resumen.style.display='block';
       resumen.innerHTML=`
         <div class="linea"><span>Entrada:</span><span>${formatFechaCorta(sel.entrada)} (${HORA_ENTRADA})</span></div>
         <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
         <div class="linea"><span>Dias:</span><span>${dias}</span></div>
+        ${rec.monto?`<div class="linea" style="color:#8a6d00;font-size:0.78rem"><span>Fin de semana / feriado largo: se cobra ${rec.cantidad>1?rec.cantidad+' dias adicionales':'1 dia adicional'}</span><span>+${formatPrecio(rec.monto)}</span></div>`:''}
         <div class="linea total"><span>Total estimado:</span><span>${formatPrecio(total)}</span></div>
         <button class="reset" onclick="resetSeleccion('${cabId}')">Limpiar seleccion</button>
       `;
@@ -656,6 +797,16 @@
     // Solo se marcan fechas cuando el usuario lo hace explicitamente con arrayUnion/arrayRemove.
   }, (err)=>{
     mostrarToast('Sin conexion a la base de datos');
+  });
+
+  feriadosRef.onSnapshot((doc)=>{
+    // Solo lectura: nunca se escribe desde aca.
+    const lista = doc.exists ? doc.data().bloques : null;
+    feriadosNube = (Array.isArray(lista) && lista.length) ? lista : null;
+    CABANAS.forEach(c=>actualizarResumen(c.id));
+    if (admin) renderFeriadosAdmin();
+  }, (err)=>{
+    mostrarToast('Sin conexion a la lista de feriados');
   });
 
   reservasRef.onSnapshot((snap)=>{

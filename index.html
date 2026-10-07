@@ -651,7 +651,7 @@
     const cal=document.getElementById('cal-'+cabId);
     if(!cal) return;
     cal.innerHTML='';
-    const ini=new Date(a,m,1).getDay(), tot=new Date(a,m+1,0).getDate();
+    const ini=(new Date(a,m,1).getDay()+6)%7, tot=new Date(a,m+1,0).getDate();
     for(let i=0;i<ini;i++){const v=document.createElement('div');v.className='dia vacio';cal.appendChild(v);}
     for(let d=1;d<=tot;d++){
       const f=new Date(a,m,d), k=clave(f);
@@ -769,7 +769,7 @@
           <button onclick="cambiarMesCabana('${cab.id}',1)">&#8594;</button>
         </div>
         <div class="instruccion">Toca la fecha de entrada</div>
-        <div class="dias-semana"><span>Dom</span><span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span></div>
+        <div class="dias-semana"><span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span></div>
         <div class="calendario-grid" id="cal-${cab.id}"></div>
         <div class="resumen-card" id="resumen-${cab.id}" style="display:none"></div>
         <div class="form-reserva" id="form-${cab.id}" style="display:none">

@@ -297,8 +297,12 @@
       }
       d = sumarDias(d, 1);
     }
+    const totalDias = Math.round((new Date(salida.getFullYear(),salida.getMonth(),salida.getDate()) - new Date(entrada.getFullYear(),entrada.getMonth(),entrada.getDate()))/86400000) + 1;
     const r = { monto:0, cantidad:0, finde:{monto:0,cantidad:0}, feriado:{monto:0,cantidad:0,dias:0} };
     Object.values(bloques).forEach(b => {
+      // Fin de semana comun: el minimo es 2 dias de estadia (ej. vie+sab o dom+lun ya es precio normal).
+      // Solo se cobra doble si reservan UN solo dia.
+      if (b.tipo === 'finde' && totalDias >= 2) return;
       if (b.elegidos.size < b.dias.length) {
         const libres = b.dias.filter(x => !b.elegidos.has(clave(x)));
         const m = Math.max(...libres.map(x => getPrecio(cabId, x)));

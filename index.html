@@ -304,7 +304,11 @@
       // Solo se cobra doble si reservan UN solo dia.
       if (b.tipo === 'finde' && totalDias >= 2) return;
       if (b.elegidos.size < b.dias.length) {
-        const libres = b.dias.filter(x => !b.elegidos.has(clave(x)));
+        // Los dias del bloque que ya estan alquilados en esta casa no se pueden vender,
+        // asi que no se cobran como recargo.
+        const ocup = (ocupadas && ocupadas[cabId]) || [];
+        const libres = b.dias.filter(x => !b.elegidos.has(clave(x)) && !ocup.includes(clave(x)));
+        if (libres.length === 0) return;
         // Feriado largo: minimo = bloque completo (se cobran todos los dias que falten).
         // Fin de semana comun: se suma un solo dia (el mas caro de los libres).
         const m = b.tipo === 'feriado'

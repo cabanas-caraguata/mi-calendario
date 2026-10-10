@@ -305,7 +305,11 @@
       if (b.tipo === 'finde' && totalDias >= 2) return;
       if (b.elegidos.size < b.dias.length) {
         const libres = b.dias.filter(x => !b.elegidos.has(clave(x)));
-        const m = Math.max(...libres.map(x => getPrecio(cabId, x)));
+        // Feriado largo: minimo = bloque completo (se cobran todos los dias que falten).
+        // Fin de semana comun: se suma un solo dia (el mas caro de los libres).
+        const m = b.tipo === 'feriado'
+          ? libres.reduce((t, x) => t + getPrecio(cabId, x), 0)
+          : Math.max(...libres.map(x => getPrecio(cabId, x)));
         r.monto += m; r.cantidad++;
         r[b.tipo].monto += m; r[b.tipo].cantidad++;
         if (b.tipo === 'feriado') r.feriado.dias = Math.max(r.feriado.dias, b.dias.length);

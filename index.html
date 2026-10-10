@@ -715,7 +715,7 @@
         <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
         <div class="linea"><span>Dias:</span><span>${dias}</span></div>
         ${rec.finde.monto?`<div class="linea" style="color:#8a6d00;font-size:0.8rem"><span>Fin de semana: mínimo 2 días</span><span>+${formatPrecio(rec.finde.monto)}</span></div>`:''}
-        ${rec.feriado.monto?`<div class="linea" style="color:#8a6d00;font-size:0.8rem"><span>Feriado largo: se suma 1 día (los ${rec.feriado.dias} días completos, sin recargo)</span><span>+${formatPrecio(rec.feriado.monto)}</span></div>`:''}
+        ${rec.feriado.monto?`<div class="linea" style="color:#c62828;font-size:0.95rem;font-weight:700"><span>Feriado largo: mínimo ${rec.feriado.dias} días</span><span>+${formatPrecio(rec.feriado.monto)}</span></div>`:''}
         <div class="linea total"><span>Total estimado:</span><span>${formatPrecio(total)}</span></div>
         <button class="reset" onclick="resetSeleccion('${cabId}')">Limpiar seleccion</button>
       `;

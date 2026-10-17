@@ -23,6 +23,7 @@
   .resumen strong { display:block; font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--texto); margin-top:0.1rem; }
   .aviso { background:#e03030; color:#fff; padding:0.7rem 1rem; border-radius:10px; font-size:0.85rem; font-weight:600; text-align:center; margin-bottom:1.2rem; }
   .separador { font-family:'Playfair Display',serif; font-size:1.1rem; color:#5a5044; margin:1.2rem 0 0.7rem; padding-bottom:0.3rem; border-bottom:2px solid #e0d8cc; }
+  .separador-alerta { color:#b03a2e; border-bottom-color:#e5b3ac; }
   .tarjeta { background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1rem 1.3rem; margin-bottom:0.9rem; }
   .tarjeta.choca { background:#fdeceb; border-color:#e5b3ac; }
   .tarjeta-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid #f0ece4; }
@@ -212,7 +213,9 @@
     const _h = new Date();
     const hoy = _h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
     const proximas = ordenadas.filter(r => (r.salida||'') >= hoy);
-    const pasadas = ordenadas.filter(r => (r.salida||'') < hoy).reverse();
+    const pasadasTodas = ordenadas.filter(r => (r.salida||'') < hoy).reverse();
+    const faltaCobrar = pasadasTodas.filter(r => saldoDe(r) > 0);
+    const pasadas = pasadasTodas.filter(r => saldoDe(r) <= 0);
     const tarjeta = r => {
       const saldo = saldoDe(r);
       const saldoOk = saldo <= 0;
@@ -236,6 +239,7 @@
         </div>`;
     };
     lista.innerHTML =
+      (faltaCobrar.length ? '<div class="separador separador-alerta">⚠️ Falta cobrar</div>' + faltaCobrar.map(tarjeta).join('') : '') +
       '<div class="separador">Hoy y próximas</div>' +
       (proximas.length ? proximas.map(tarjeta).join('') : '<div class="vacio">No hay reservas para hoy ni próximas</div>') +
       (pasadas.length ? '<div class="separador">Ya pasaron</div>' + pasadas.map(tarjeta).join('') : '');

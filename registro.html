@@ -189,7 +189,7 @@
       return;
     }
 
-    const ordenadas = [...reservas].sort((a,b)=> (b.fecha_registro||'')<(a.fecha_registro||'')?-1:(b.fecha_registro||'')>(a.fecha_registro||'')?1:0);
+    const ordenadas = [...reservas].sort((a,b)=> (a.entrada||'').localeCompare(b.entrada||''));
     const superpuestos = detectarSuperposiciones(ordenadas);
 
     const totalG = reservas.reduce((s,r)=>s+r.total,0);

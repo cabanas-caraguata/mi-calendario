@@ -583,7 +583,7 @@
   function guardarEdicion(id){
     const r=reservas.find(x=>x.id===id);
     if(!r) return;
-    const total=parseFloat(document.getElementById('edit-total-'+id)?.value)||r.total;
+    const vTotal=document.getElementById('edit-total-'+id)?.value; const total=(vTotal===''||vTotal==null)?r.total:(parseFloat(vTotal)||0);
     const senia=parseFloat(document.getElementById('edit-senia-'+id)?.value)||0;
     const tel=document.getElementById('edit-tel-'+id)?.value.trim()||'';
     const notas=document.getElementById('edit-notas-'+id)?.value.trim()||'';

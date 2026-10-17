@@ -587,7 +587,7 @@
     const senia=parseFloat(document.getElementById('edit-senia-'+id)?.value)||0;
     const tel=document.getElementById('edit-tel-'+id)?.value.trim()||'';
     const notas=document.getElementById('edit-notas-'+id)?.value.trim()||'';
-    const saldo=total-senia;
+    const saldo=total-senia-(r.pago_llegada||0);
     reservasRef.doc(id).update({ total, senia, saldo, tel, notas })
       .then(()=>mostrarToast('Reserva actualizada'))
       .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));

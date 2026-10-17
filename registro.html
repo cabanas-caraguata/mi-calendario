@@ -32,6 +32,16 @@
   .tarjeta-grid .valor { font-weight:600; }
   .badge-ok { color:#2d7a3a; }
   .badge-pendiente { color:#b02a2a; }
+  .pagos { margin-top:0.8rem; padding-top:0.7rem; border-top:1px dashed #e0d8cc; }
+  .pagos-fila { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.5rem; font-size:0.9rem; }
+  .pagos-fila label { color:#5a5044; }
+  .pagos-fila input { width:130px; padding:0.45rem 0.5rem; border:1px solid #ccc; border-radius:8px; font-size:1rem; text-align:right; }
+  .pagos-saldo { font-weight:700; }
+  .pagos-botones { display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap; }
+  .btn-pago { flex:1; border:none; padding:0.65rem 0.8rem; border-radius:8px; font-size:0.9rem; cursor:pointer; font-family:'Inter',sans-serif; }
+  .btn-completo { background:#2d7a3a; color:#fff; }
+  .btn-guardar { background:var(--texto); color:#f0ece4; }
+  .btn-editar { background:#f0ece4; color:var(--texto); border:1px solid #e0d8cc; margin-top:0.8rem; width:100%; }
   .vacio { text-align:center; color:#aaa; padding:2rem; font-size:0.9rem; }
   #login { max-width:320px; margin:4rem auto; background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1.5rem; text-align:center; }
   #login input { width:100%; padding:0.6rem; margin:0.8rem 0; border:1px solid #ccc; border-radius:8px; font-size:1rem; text-align:center; }
@@ -102,6 +112,57 @@
     return '$' + Math.round(n||0).toLocaleString('es-AR');
   }
 
+  let abierta = null;
+
+  function saldoDe(r){
+    return (r.total||0) - (r.senia||0) - (r.pago_llegada||0);
+  }
+
+  function editorPagos(r){
+    return `
+      <div class="pagos">
+        <div class="pagos-fila"><label>Seña</label><input id="p-senia-${r.id}" type="number" inputmode="numeric" value="${r.senia||0}" oninput="actualizarSaldo('${r.id}')"></div>
+        <div class="pagos-fila"><label>Pago al llegar</label><input id="p-llegada-${r.id}" type="number" inputmode="numeric" value="${r.pago_llegada||0}" oninput="actualizarSaldo('${r.id}')"></div>
+        <div class="pagos-fila"><span>Saldo</span><span class="pagos-saldo" id="p-saldo-${r.id}">${formatPrecio(saldoDe(r))}</span></div>
+        <div class="pagos-botones">
+          <button class="btn-pago btn-completo" onclick="pagoCompleto('${r.id}')">✓ Pagó todo</button>
+          <button class="btn-pago btn-guardar" onclick="guardarPagos('${r.id}')">Guardar</button>
+        </div>
+        <div class="pagos-botones"><button class="btn-pago btn-editar" style="margin-top:0" onclick="abierta=null;render()">Cancelar</button></div>
+      </div>`;
+  }
+
+  function abrirPagos(id){ abierta = id; render(); }
+
+  function leerPagos(id){
+    return {
+      senia: parseFloat(document.getElementById('p-senia-'+id).value)||0,
+      pago_llegada: parseFloat(document.getElementById('p-llegada-'+id).value)||0
+    };
+  }
+
+  function actualizarSaldo(id){
+    const r = reservas.find(x=>x.id===id); if(!r) return;
+    const p = leerPagos(id);
+    document.getElementById('p-saldo-'+id).textContent = formatPrecio(r.total - p.senia - p.pago_llegada);
+  }
+
+  function pagoCompleto(id){
+    const r = reservas.find(x=>x.id===id); if(!r) return;
+    const senia = parseFloat(document.getElementById('p-senia-'+id).value)||0;
+    document.getElementById('p-llegada-'+id).value = Math.max(0, r.total - senia);
+    actualizarSaldo(id);
+  }
+
+  function guardarPagos(id){
+    const r = reservas.find(x=>x.id===id); if(!r) return;
+    const p = leerPagos(id);
+    const saldo = r.total - p.senia - p.pago_llegada;
+    reservasRef.doc(id).update({ senia: p.senia, pago_llegada: p.pago_llegada, saldo })
+      .then(()=>{ abierta = null; render(); })
+      .catch(()=> alert('No se pudo guardar. Revisá la conexión.'));
+  }
+
   function detectarSuperposiciones(lista){
     const superpuestos = new Set();
     for(let i=0;i<lista.length;i++){
@@ -133,11 +194,13 @@
 
     const totalG = reservas.reduce((s,r)=>s+r.total,0);
     const seniaG = reservas.reduce((s,r)=>s+(r.senia||0),0);
-    const saldoG = reservas.reduce((s,r)=>s+r.saldo,0);
+    const llegadaG = reservas.reduce((s,r)=>s+(r.pago_llegada||0),0);
+    const saldoG = reservas.reduce((s,r)=>s+saldoDe(r),0);
     resumen.innerHTML = `
       <div>Reservas<strong>${reservas.length}</strong></div>
       <div>Total<strong>${formatPrecio(totalG)}</strong></div>
       <div>Señas cobradas<strong>${formatPrecio(seniaG)}</strong></div>
+      <div>Cobrado al llegar<strong>${formatPrecio(llegadaG)}</strong></div>
       <div>Saldo pendiente<strong>${formatPrecio(saldoG)}</strong></div>
     `;
 
@@ -146,7 +209,8 @@
       : '';
 
     lista.innerHTML = ordenadas.map(r => {
-      const saldoOk = r.saldo <= 0;
+      const saldo = saldoDe(r);
+      const saldoOk = saldo <= 0;
       const choca = superpuestos.has(r.id);
       return `
         <div class="tarjeta${choca?' choca':''}">
@@ -158,10 +222,12 @@
             <div><div class="etiqueta">Cargada</div><div class="valor">${r.fecha_registro?fechaCorta(r.fecha_registro):'-'}</div></div>
             <div><div class="etiqueta">Total</div><div class="valor">${formatPrecio(r.total)}</div></div>
             <div><div class="etiqueta">Seña</div><div class="valor">${formatPrecio(r.senia||0)}</div></div>
-            <div><div class="etiqueta">Saldo</div><div class="valor ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</div></div>
+            <div><div class="etiqueta">Al llegar</div><div class="valor">${formatPrecio(r.pago_llegada||0)}</div></div>
+            <div><div class="etiqueta">Saldo</div><div class="valor ${saldoOk?'badge-ok':'badge-pendiente'}">${saldoOk?'✅ $0':formatPrecio(saldo)}</div></div>
             <div><div class="etiqueta">Tel</div><div class="valor">${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'')}" target="_blank">${r.tel}</a>`:'-'}</div></div>
             <div><div class="etiqueta">Notas</div><div class="valor">${r.notas||'-'}</div></div>
           </div>
+          ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
         </div>`;
     }).join('');
   }
@@ -169,7 +235,7 @@
   function escucharReservas(){
     reservasRef.onSnapshot((snap) => {
       reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
-      render();
+      if(!abierta) render();
     }, (err) => {
       document.getElementById('lista').innerHTML = '<div class="vacio">Sin conexión al registro de reservas</div>';
     });
@@ -177,8 +243,8 @@
 
   function exportarExcel(){
     if(!reservas.length){ alert("No hay reservas para exportar."); return; }
-    let csv="Cabana,F.Reserva,Entrada,Salida,Dias,Total,Senia,Saldo,Telefono,Notas\n";
-    reservas.forEach(r=>{ csv+=`${r.cabana},${r.fecha_registro||""},${r.entrada.split("-").reverse().join("-")},${r.salida.split("-").reverse().join("-")},${r.dias},${r.total},${r.senia||0},${r.saldo},${r.tel||''},${(r.notas||'').replace(/,/g,' ')}\n`; });
+    let csv="Cabana,F.Reserva,Entrada,Salida,Dias,Total,Senia,Pago llegada,Saldo,Telefono,Notas\n";
+    reservas.forEach(r=>{ csv+=`${r.cabana},${r.fecha_registro||""},${r.entrada.split("-").reverse().join("-")},${r.salida.split("-").reverse().join("-")},${r.dias},${r.total},${r.senia||0},${r.pago_llegada||0},${saldoDe(r)},${r.tel||''},${(r.notas||'').replace(/,/g,' ')}\n`; });
     const totalG=reservas.reduce((s,r)=>s+r.total,0);
     csv+=`\nTOTAL,,,, ${totalG}\n`;
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});

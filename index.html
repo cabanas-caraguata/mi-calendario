@@ -584,7 +584,9 @@
   function guardarEdicion(id){
     const r=reservas.find(x=>x.id===id);
     if(!r) return;
-    const total=parseFloat(document.getElementById('edit-total-'+id)?.value)||r.total;
+    // Si el campo esta vacio se mantiene el total anterior; un 0 es un valor valido (ej. estadia sin cobro).
+    const totalIngresado=parseFloat(document.getElementById('edit-total-'+id)?.value);
+    const total=isNaN(totalIngresado)?r.total:totalIngresado;
     const senia=parseFloat(document.getElementById('edit-senia-'+id)?.value)||0;
     const tel=document.getElementById('edit-tel-'+id)?.value.trim()||'';
     const notas=document.getElementById('edit-notas-'+id)?.value.trim()||'';

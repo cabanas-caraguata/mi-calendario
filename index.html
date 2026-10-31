@@ -503,6 +503,8 @@
     const nombreCorto = cab.nombre.replace('Casa ','');
     let msg = `${nombreCorto} ${entradaStr} al ${salidaStr}`;
     if(tel) msg += `\nTel: ${tel}`;
+    msg += `\nSeña: ${formatPrecio(senia)}`;
+    msg += `\nFalta pagar: ${formatPrecio(saldo)}`;
     if(notas) msg += `\nNotas: ${notas}`;
     const waUrl = `https://wa.me/541158467707?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');

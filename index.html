@@ -208,6 +208,7 @@
   const WHATSAPP = "541158467707";
   const PASS = "1111";
   const KEY = "caraguata_ocupadas";
+  const INFO_URL = "https://cabanas-caraguata.github.io/mi-calendario/bienvenida.html"; // pagina con la info para el cliente que ya señó
   const CAL_URL = "https://cabanas-caraguata.github.io/mi-calendario/";
   const HORA_ENTRADA = "8:00 hs";
   const HORA_SALIDA = "18:30 hs";
@@ -529,12 +530,26 @@
     const salidaStr = sel.salida.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nombreCorto = cab.nombre.replace('Casa ','');
     let msg = `${nombreCorto} ${entradaStr} al ${salidaStr}`;
-    if(tel) msg += `\nTel: ${tel}`;
+    if(tel) msg += `\nTel: ${telInternacional(tel)}`;
     if(notas) msg += `\nNotas: ${notas}`;
+    msg += `\nSeña: ${formatPrecio(senia)}\nResto a pagar: ${formatPrecio(saldo)}`;
     const waUrl = `https://wa.me/541158467707?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
   }
 
+
+  // Devuelve el celular en formato internacional (+54 9 ...) para que WhatsApp lo muestre como link tocable
+  function telInternacional(t){
+    let d=String(t||'').replace(/\D/g,'');
+    if(!d) return String(t||'');
+    d=d.replace(/^00/,'');
+    if(d.startsWith('54')) d=d.slice(2);
+    if(d.startsWith('9') && d.length===11) d=d.slice(1);
+    if(d.startsWith('0')) d=d.slice(1);
+    if(d.length===12 && d.slice(2,4)==='15') d=d.slice(0,2)+d.slice(4);
+    if(d.length===10) return '+54 9 '+d.slice(0,2)+' '+d.slice(2,6)+'-'+d.slice(6);
+    return '+'+(String(t).replace(/\D/g,'').startsWith('54')?'':'54 ')+d;
+  }
 
   function marcarOcupado(cabId) {
     const sel = seleccion[cabId];
@@ -673,7 +688,7 @@
     if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
     const entradaTxt=new Date(r.entrada+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
-    const msg=`RESERVA PENDIENTE DE PAGO\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${tel}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña depositada: ${formatPrecio(r.senia)}\n\nTe mando el comprobante de pago a continuación.`;
+    const msg=`RESERVA ONLINE - COMPROBANTE DE PAGO\n\nReservé estas fechas y te envío el comprobante de la seña.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña depositada: ${formatPrecio(r.senia)}\n\nAdjunto el comprobante a continuación.`;
     const waUrl=`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       reservasRef.add({
@@ -760,6 +775,47 @@
     reservasRef.doc(id).update({ estado:'confirmada', senia, saldo:r.total-senia })
       .then(()=>mostrarToast('Reserva confirmada'))
       .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+    if(r.tel && confirm('Seña registrada. ¿Abrir WhatsApp para avisarle al cliente que su reserva está confirmada?')){
+      enviarConfirmacion(id, senia);
+    }
+    if(confirm('¿Armar el mensaje con las fechas para reenviarle a la casera?')){
+      enviarACasera(id, senia);
+    }
+  }
+
+  // Mismo formato que el mensaje del modo "marcar ocupado": llega a tu WhatsApp para reenviarlo a la casera
+  function enviarACasera(id, seniaForzada){
+    const r=reservas.find(x=>x.id===id); if(!r) return;
+    const senia=(seniaForzada!==undefined)?seniaForzada:(r.senia||0);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    let msg=`${r.cabana.replace('Casa ','')} ${f(r.entrada)} al ${f(r.salida)}`;
+    if(r.tel) msg+=`\nTel: ${telInternacional(r.tel)}`;
+    msg+=`\nNotas: ${r.nombre||''}`;
+    msg+=`\nSeña: ${formatPrecio(senia)}\nResto a pagar: ${formatPrecio(Math.max(0,(r.total||0)-senia))}`;
+    window.open('https://wa.me/541158467707?text='+encodeURIComponent(msg),'_blank');
+  }
+
+  // Mensaje que se le manda al cliente cuando se confirma la reserva (editable)
+  function mensajeConfirmacion(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    const nombre=(r.nombre||'').split(' ')[0];
+    const saldo=Math.max(0,(r.total||0)-senia);
+    return `¡Hola${nombre?' '+nombre:''}! Recibimos tu seña y tu reserva quedó CONFIRMADA ✅\n\n`+
+      `🏠 ${r.cabana}\n`+
+      `📅 Entrada: ${f(r.entrada)}, desde las ${HORA_ENTRADA}\n`+
+      `📅 Salida: ${f(r.salida)}, hasta las ${HORA_SALIDA}\n`+
+      `💰 Total: ${formatPrecio(r.total)}\n`+
+      `✔️ Seña recibida: ${formatPrecio(senia)}\n`+
+      `💵 Saldo a abonar al llegar: ${formatPrecio(saldo)}\n\n`+
+      `Es muy importante que leas con atención toda la información de tu estadía (horarios, cómo llegar, wifi, normas y emergencias):\n${INFO_URL}\n\n`+
+      `Gracias y disfrutá la estadía 🌿`;
+  }
+
+  function enviarConfirmacion(id, seniaForzada){
+    const r=reservas.find(x=>x.id===id); if(!r||!r.tel) return;
+    const senia=(seniaForzada!==undefined)?seniaForzada:(r.senia||0);
+    const num=r.tel.replace(/\D/g,'').replace(/^(00)?54/,'');
+    window.open('https://wa.me/54'+num+'?text='+encodeURIComponent(mensajeConfirmacion(r,senia)),'_blank');
   }
 
   function eliminarReserva(id){
@@ -853,6 +909,8 @@
         <td data-label="Notas">${r.notas||'-'}</td>
         <td>
           ${pend?`<button class="btn-editar" title="Confirmar pago" onclick="confirmarPendiente('${r.id}')">✅</button>`:''}
+          ${(!pend&&r.estado==='confirmada')?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
+          ${(!pend&&r.tel&&r.estado==='confirmada')?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
           <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
           <button class="btn-eliminar" onclick="eliminarReserva('${r.id}')">X</button>
         </td>
@@ -959,7 +1017,7 @@
       `;
       if(btnWa){
         const nombreMensaje = cab.id==='verde'?'Casa Ver de':cab.id==='roja'?'Casa Ro ja':cab.id==='blanca'?'Casa Blan ca':'Casa Ma rron';
-        const msg=`Hola! Quiero consultar disponibilidad para ${nombreMensaje}.\nEntrada: ${formatFecha(sel.entrada)} (desde las ${HORA_ENTRADA})\nSalida: ${formatFecha(sel.salida)} (hasta las ${HORA_SALIDA})\nDias: ${dias}\nTotal estimado: ${formatPrecio(total)}\n\nVer calendario: ${CAL_URL}`;
+        const msg=`Hola! Quiero consultar disponibilidad para ${nombreMensaje}.\nEntrada: ${formatFecha(sel.entrada)} (desde las ${HORA_ENTRADA})\nSalida: ${formatFecha(sel.salida)} (hasta las ${HORA_SALIDA})\nDias: ${dias}\nTotal estimado: ${formatPrecio(total)}\n\nVer calendario: ${CAL_URL}\n\nEnviado desde la web`;
         btnWa.href=`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
         btnWa.style.display='block';
       }

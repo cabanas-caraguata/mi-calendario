@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Cabañas Caraguatá - Información de tu estadía</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --verde: #2d6a4f;
+    --verde-claro: #e8f5ee;
+    --agua: #52b788;
+    --arena: #f8f4ed;
+    --texto: #1a1a1a;
+    --gris: #666;
+    --aviso: #fff4d6;
+    --aviso-borde: #e0b94a;
+    --rojo: #b3261e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--arena);
+    color: var(--texto);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .header {
+    background: var(--verde);
+    color: white;
+    text-align: center;
+    padding: 34px 20px 28px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .header p { font-size: 1rem; opacity: 0.92; max-width: 460px; margin: 0 auto; }
+
+  .contenido { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  .importante {
+    background: var(--aviso);
+    border: 2px solid var(--aviso-borde);
+    border-radius: 14px;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 18px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .card h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--verde);
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card p { margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul { padding-left: 1.2rem; }
+  .card li { margin-bottom: 6px; }
+
+  .fila { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eee; }
+  .fila:last-child { border-bottom: none; }
+  .fila span:first-child { color: var(--gris); }
+  .fila strong { text-align: right; }
+
+  .destacado {
+    background: var(--verde-claro);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 8px 0;
+  }
+  .clave {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .alerta {
+    background: #fdecea;
+    border-left: 5px solid var(--rojo);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 8px;
+  }
+
+  .boton {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    background: var(--verde);
+    color: white;
+    font-weight: 600;
+    padding: 13px 16px;
+    border-radius: 12px;
+    margin-top: 10px;
+    border: none;
+    width: 100%;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .boton.wsp { background: #25D366; }
+  .boton.rojo { background: var(--rojo); }
+  .boton.claro { background: var(--verde-claro); color: var(--verde); }
+
+  .pie { text-align: center; color: var(--gris); font-size: 0.95rem; margin-top: 22px; }
+  .pie strong { color: var(--verde); font-size: 1.1rem; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Cabañas Caraguatá</h1>
+  <p>¡Ya recibimos tu seña! Esta es la información de tu estadía.</p>
+</div>
+
+<div class="contenido">
+
+  <div class="importante">⚠️ Es muy importante que leas todo esto antes de viajar</div>
+
+  <div class="card">
+    <h2>🕐 Horarios</h2>
+    <div class="fila"><span>Entrada</span><strong>Desde las 8 hs</strong></div>
+    <div class="fila"><span>Salida</span><strong>Última lancha, 18 hs</strong></div>
+    <p style="margin-top:8px">El día de la salida tenés que estar en el muelle para tomar la última lancha de las 18 hs.</p>
+  </div>
+
+  <div class="card">
+    <h2>📶 Wifi</h2>
+    <div class="fila"><span>Red</span><strong>Starlink · Cabañas Caraguatá</strong></div>
+    <div class="destacado">
+      <div style="font-size:0.85rem;color:var(--gris)">Clave</div>
+      <div class="clave" id="clave">brisa128</div>
+    </div>
+    <button class="boton claro" onclick="copiarClave(this)">Copiar clave</button>
+  </div>
+
+  <div class="card">
+    <h2>🚤 Antes de viajar</h2>
+    <ul>
+      <li><strong>La noche anterior</strong> avisanos a qué hora vas a llegar.</li>
+      <li><strong>Yami</strong> es la persona que te va a recibir.</li>
+      <li>En la lancha pedí que te avisen para bajar.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🗺️ Cómo llegar</h2>
+    <p>Acá te dejamos la información para llegar a las cabañas.</p>
+    <a class="boton" href="https://docs.google.com/document/d/1-wUnJejCCm1HRilCZJFpmvqCsBIslgzKRsGNJQBHbN4/edit?usp=drivesdk" target="_blank" rel="noopener">📄 Cómo llegar · Documento 1</a>
+    <a class="boton" href="https://docs.google.com/document/d/1wDwAJhHoaG87ZQDB2ywFX8lKqD1qVotCoQNMSUoxmEc/edit?usp=drivesdk" target="_blank" rel="noopener">📄 Cómo llegar · Documento 2</a>
+  </div>
+
+  <div class="card">
+    <h2>♻️ Residuos</h2>
+    <p><strong>Martes, jueves y domingos</strong> a partir de las 19:00 hs.</p>
+    <p><strong>Todo en bolsas</strong>, porque si no, no lo retiran. Lo dejás en la punta del muelle.</p>
+  </div>
+
+  <div class="card">
+    <h2>🏡 Vecinos</h2>
+    <div class="alerta">
+      <strong>Está totalmente prohibido</strong> ingresar al terreno de los vecinos, usar su muelle o recolectar frutas y plantas de sus terrenos.
+    </div>
+    <p style="margin-top:10px">Ellos cuentan con cámaras de vigilancia las 24 horas del día. Inquilinos anteriores han tenido problemas con ellos y con la policía, por eso queremos evitar cualquier conflicto en el futuro.</p>
+    <p>Si tenés alguna pregunta, no dudes en hacérmela saber.</p>
+  </div>
+
+  <div class="card">
+    <h2>🧹 Al irte</h2>
+    <p>Te pedimos dejar la casa <strong>limpia y ordenada</strong>, tal como estaba al momento de la entrega.</p>
+  </div>
+
+  <div class="card">
+    <h2>🚑 Accidentes o emergencias médicas</h2>
+    <p><strong>SET</strong> es el sistema de emergencias.</p>
+    <a class="boton rojo" href="tel:01145129999">📞 Llamar a SET · (011) 4512-9999</a>
+    <p style="margin-top:8px;color:var(--gris);font-size:0.9rem">También: (011) 4512-9998 / 9997</p>
+  </div>
+
+  <div class="card">
+    <h2>🛒 Lancha almacén</h2>
+    <p><strong>La Esperanza</strong> pasa martes, jueves y sábados.</p>
+    <div class="alerta" style="background:var(--aviso);border-left-color:var(--aviso-borde)">
+      <strong>Atención:</strong> por el momento no está pasando por problemas de salud.
+    </div>
+    <p style="margin-top:10px"><strong>Otra opción:</strong> hacer un pedido a <strong>Nélida</strong>.</p>
+    <ul>
+      <li>Dejalo pago.</li>
+      <li>Avisá para qué casa es y para qué fecha.</li>
+      <li>Ellos lo dejan en el muelle y Yami lo guarda.</li>
+    </ul>
+    <a class="boton wsp" href="https://wa.me/5491135644466" target="_blank" rel="noopener">💬 Escribirle a Nélida · 9 11 3564-4466</a>
+  </div>
+
+  <div class="pie">
+    <strong>Gracias y disfruten la estadía 🌿</strong>
+    Cabañas Caraguatá · Delta de Tigre
+  </div>
+
+</div>
+
+<script>
+  function copiarClave(btn){
+    var t = document.getElementById('clave').textContent.trim();
+    var ok = function(){ btn.textContent = '✅ Copiada'; setTimeout(function(){ btn.textContent = 'Copiar clave'; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(ok, function(){ fallback(t, ok); });
+    } else { fallback(t, ok); }
+  }
+  function fallback(t, ok){
+    var a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select();
+    try { document.execCommand('copy'); ok(); } catch(e) {}
+    document.body.removeChild(a);
+  }
+</script>
+</body>
+</html>

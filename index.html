@@ -213,14 +213,14 @@
   const HORA_ENTRADA = "8:00 hs";
   const HORA_SALIDA = "18:30 hs";
 
-  // ---- Reserva online con seña (el boton solo aparece si se entra con ?reservar=1) ----
+  // ---- Reserva online con seña (activada para todos; para apagarla, cambiar true por false) ----
   const PAGO = {
     alias: "Ruben.akfra.mp",      // <-- alias o CVU para que depositen
     titular: "Ruben Isaac Akselman (Mercado Pago)",  // <-- nombre del titular de la cuenta
     seniaPct: 0.5                  // porcentaje de la seña (0.5 = 50%)
   };
   const MINUTOS_PENDIENTE = 30; // si no se llega a abrir WhatsApp con la reserva en este tiempo, la reserva pendiente se libera sola
-  const RESERVA_ONLINE = new URLSearchParams(location.search).get('reservar') === '1';
+  const RESERVA_ONLINE = true;
 
   const firebaseConfig = {
     apiKey: "AIzaSyASHU5d-e2a1cKunNyY-ivNKHx3cFCwqCQ",

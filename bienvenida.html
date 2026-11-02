@@ -123,6 +123,14 @@
   .boton.rojo { background: var(--rojo); }
   .boton.claro { background: var(--verde-claro); color: var(--verde); }
 
+  html { scroll-behavior: smooth; }
+  .card { scroll-margin-top: 12px; }
+  .indice { background:white; border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:0 1px 6px rgba(0,0,0,0.07); }
+  .indice h2 { font-family:'Playfair Display', serif; color:var(--verde); font-size:1.15rem; margin-bottom:10px; text-align:center; }
+  .indice-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .indice-grid a { display:flex; align-items:center; gap:6px; background:var(--verde-claro); color:var(--verde); text-decoration:none; font-weight:600; font-size:0.92rem; padding:11px 10px; border-radius:10px; }
+  .arriba { display:block; text-align:center; margin-top:12px; color:var(--verde); font-weight:600; font-size:0.9rem; text-decoration:none; }
+  .sub { font-weight:700; color:var(--verde); margin:12px 0 4px; }
   .pie { text-align: center; color: var(--gris); font-size: 0.95rem; margin-top: 22px; }
   .pie strong { color: var(--verde); font-size: 1.1rem; display: block; margin-bottom: 4px; }
 </style>
@@ -136,16 +144,32 @@
 
 <div class="contenido">
 
-  <div class="importante">⚠️ Es muy importante que leas todo esto antes de viajar</div>
+  <div class="importante" id="arriba">⚠️ Es muy importante que leas todo esto antes de viajar</div>
 
-  <div class="card">
+  <div class="indice">
+    <h2>¿Qué querés ver?</h2>
+    <div class="indice-grid">
+      <a href="#horarios">🕐 Horarios</a>
+      <a href="#llegar">🗺️ Cómo llegar</a>
+      <a href="#wifi">📶 Wifi</a>
+      <a href="#viajar">🚤 Antes de viajar</a>
+      <a href="#residuos">♻️ Residuos</a>
+      <a href="#vecinos">🏡 Vecinos</a>
+      <a href="#irte">🧹 Al irte</a>
+      <a href="#emergencias">🚑 Emergencias</a>
+      <a href="#almacen">🛒 Almacén</a>
+    </div>
+  </div>
+
+  <div class="card" id="horarios">
     <h2>🕐 Horarios</h2>
     <div class="fila"><span>Entrada</span><strong>Desde las 8 hs</strong></div>
     <div class="fila"><span>Salida</span><strong>Última lancha, 18 hs</strong></div>
     <p style="margin-top:8px">El día de la salida tenés que estar en el muelle para tomar la última lancha de las 18 hs.</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="wifi">
     <h2>📶 Wifi</h2>
     <div class="fila"><span>Red</span><strong>Starlink · Cabañas Caraguatá</strong></div>
     <div class="destacado">
@@ -153,52 +177,72 @@
       <div class="clave" id="clave">brisa128</div>
     </div>
     <button class="boton claro" onclick="copiarClave(this)">Copiar clave</button>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="viajar">
     <h2>🚤 Antes de viajar</h2>
     <ul>
       <li><strong>La noche anterior</strong> avisanos a qué hora vas a llegar.</li>
       <li><strong>Yami</strong> es la persona que te va a recibir.</li>
       <li>En la lancha pedí que te avisen para bajar.</li>
     </ul>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="llegar">
     <h2>🗺️ Cómo llegar</h2>
-    <p>Acá te dejamos la información para llegar a las cabañas.</p>
-    <a class="boton" href="https://docs.google.com/document/d/1-wUnJejCCm1HRilCZJFpmvqCsBIslgzKRsGNJQBHbN4/edit?usp=drivesdk" target="_blank" rel="noopener">📄 Cómo llegar · Documento 1</a>
-    <a class="boton" href="https://docs.google.com/document/d/1wDwAJhHoaG87ZQDB2ywFX8lKqD1qVotCoQNMSUoxmEc/edit?usp=drivesdk" target="_blank" rel="noopener">📄 Cómo llegar · Documento 2</a>
+    <p class="sub">🚢 Lancha colectiva (la más común)</p>
+    <p><strong>Estación Fluvial de Tigre</strong>, frente a la estación del tren. En la zona hay muchas opciones para dejar el auto.</p>
+    <p>Empresa <strong>Líneas Delta</strong> · Tel: 4731-1236 / 4749-0537</p>
+    <p>Sacás boleto ida y vuelta en el momento. ¡Llegá con tiempo!</p>
+    <p>Salen de la <strong>Rampa 3</strong>, solo las que van por Caraguatá. Bajás en <strong>Caraguatá 128</strong>: pedí que te avisen.</p>
+    <p>Viaje de unos 30 minutos · $11.000 por persona, ida y vuelta.</p>
+    <div class="fila"><span>Salidas desde Tigre</span><strong>7:30 · 10:30 · 15:30 · 18:30</strong></div>
+    <div class="fila"><span>Regreso a Tigre</span><strong>6:30 · 9:30 · 14:30 · 18:30</strong></div>
+    <p style="margin-top:8px;color:var(--gris);font-size:0.9rem">Estate en el muelle un rato antes, por las dudas.</p>
+
+    <p class="sub">🚗 Otra opción: Puerto Benavides</p>
+    <p>Llegás en auto a la <strong>Guardería Puerto Benavides</strong> y lo dejás adentro ($2.000 por día). Antes tenés que arreglar con <strong>Ricardo</strong>, el remisero, para que te pase a buscar.</p>
+    <a class="boton claro" href="https://g.co/kgs/PYzrUHP" target="_blank" rel="noopener">📍 Ver ubicación de Puerto Benavides</a>
+    <a class="boton" href="tel:+541149806752">📞 Llamar a Ricardo · 11 4980-6752</a>
+
+    <a class="boton claro" href="https://maps.app.goo.gl/qt4rMrm8Z926W1Ee7" target="_blank" rel="noopener">📍 Ver las cabañas en Google Maps</a>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="residuos">
     <h2>♻️ Residuos</h2>
     <p><strong>Martes, jueves y domingos</strong> a partir de las 19:00 hs.</p>
     <p><strong>Todo en bolsas</strong>, porque si no, no lo retiran. Lo dejás en la punta del muelle.</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="vecinos">
     <h2>🏡 Vecinos</h2>
     <div class="alerta">
       <strong>Está totalmente prohibido</strong> ingresar al terreno de los vecinos, usar su muelle o recolectar frutas y plantas de sus terrenos.
     </div>
     <p style="margin-top:10px">Ellos cuentan con cámaras de vigilancia las 24 horas del día. Inquilinos anteriores han tenido problemas con ellos y con la policía, por eso queremos evitar cualquier conflicto en el futuro.</p>
     <p>Si tenés alguna pregunta, no dudes en hacérmela saber.</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="irte">
     <h2>🧹 Al irte</h2>
     <p>Te pedimos dejar la casa <strong>limpia y ordenada</strong>, tal como estaba al momento de la entrega.</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="emergencias">
     <h2>🚑 Accidentes o emergencias médicas</h2>
     <p><strong>SET</strong> es el sistema de emergencias.</p>
     <a class="boton rojo" href="tel:01145129999">📞 Llamar a SET · (011) 4512-9999</a>
     <p style="margin-top:8px;color:var(--gris);font-size:0.9rem">También: (011) 4512-9998 / 9997</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
-  <div class="card">
+  <div class="card" id="almacen">
     <h2>🛒 Lancha almacén</h2>
     <p><strong>La Esperanza</strong> pasa martes, jueves y sábados.</p>
     <div class="alerta" style="background:var(--aviso);border-left-color:var(--aviso-borde)">
@@ -211,6 +255,7 @@
       <li>Ellos lo dejan en el muelle y Yami lo guarda.</li>
     </ul>
     <a class="boton wsp" href="https://wa.me/5491135644466" target="_blank" rel="noopener">💬 Escribirle a Nélida · 9 11 3564-4466</a>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 
   <div class="pie">

@@ -688,10 +688,12 @@
     if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
     const entradaTxt=new Date(r.entrada+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
-    const msg=`RESERVA ONLINE - COMPROBANTE DE PAGO\n\nReservé estas fechas y te envío el comprobante de la seña.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña depositada: ${formatPrecio(r.senia)}\n\nAdjunto el comprobante a continuación.`;
+    const nuevaRef=reservasRef.doc();
+    const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
+    const msg=`RESERVA ONLINE - COMPROBANTE DE PAGO\n\nReservé estas fechas y te envío el comprobante de la seña.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña depositada: ${formatPrecio(r.senia)}\n\nAdjunto el comprobante a continuación.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
     const waUrl=`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
-      reservasRef.add({
+      nuevaRef.set({
         cabana: cab.nombre, entrada: r.entrada, salida: r.salida, dias: r.dias,
         total: r.total, tel, nombre, senia:0, saldo:r.total,
         notas:'Reserva online - '+nombre+' - seña pedida '+formatPrecio(r.senia),
@@ -701,7 +703,7 @@
       ocupadasRef.set({ [r.cabId]: firebase.firestore.FieldValue.arrayUnion(...fechas) }, { merge:true })
     ]);
     const espera=new Promise(res=>setTimeout(()=>res('timeout'),6000));
-    reservaCreada={ref:null,url:waUrl,listo:guardar.then(x=>{ reservaCreada.ref=x[0]; return x[0]; })};
+    reservaCreada={ref:null,url:waUrl,listo:guardar.then(()=>{ reservaCreada.ref=nuevaRef; return nuevaRef; })};
     reservaCreada.listo.catch(()=>{});
     try{
       await Promise.race([guardar,espera]);
@@ -781,6 +783,48 @@
     if(confirm('¿Armar el mensaje con las fechas para reenviarle a la casera?')){
       enviarACasera(id, senia);
     }
+  }
+
+  // ---- Link "?confirmar=ID" que llega en el mensaje de WhatsApp de la reserva online ----
+  const CONFIRMAR_ID = new URLSearchParams(location.search).get('confirmar');
+  let panelConfirmarMostrado=false;
+  function mostrarPanelConfirmar(){
+    if(!CONFIRMAR_ID || panelConfirmarMostrado) return;
+    panelConfirmarMostrado=true;
+    const r=reservas.find(x=>x.id===CONFIRMAR_ID);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    let html;
+    if(!r){
+      html=`<h3>Reserva no encontrada</h3><div class="nota">Puede que se haya eliminado o liberado. Revisá el registro en modo administrador.</div>`;
+    } else {
+      const datos=`<div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+        <div class="linea"><span>Nombre:</span><span>${r.nombre||'-'}</span></div>
+        <div class="linea"><span>Tel:</span><span>${r.tel||'-'}</span></div>
+        <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
+        <div class="linea"><span>Total:</span><span>${formatPrecio(r.total||0)}</span></div>`;
+      if(r.estado==='pendiente'){
+        html=`<h3>⏳ Reserva pendiente</h3>${datos}
+          <div class="linea"><span>Seña pedida:</span><span>${formatPrecio(r.senia_pedida||0)}</span></div>
+          <button class="btn-ok" onclick="confirmarDesdeLink()">✅ Pago recibido, confirmar</button>`;
+      } else {
+        html=`<h3>✅ Esta reserva ya está confirmada</h3>${datos}
+          <div class="linea"><span>Seña:</span><span>${formatPrecio(r.senia||0)}</span></div>`;
+      }
+    }
+    document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function confirmarDesdeLink(){
+    if(!admin){
+      const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return; }
+      admin=true;
+      document.getElementById('btn-admin').textContent="Salir del modo admin";
+      document.getElementById('registro-contenedor').style.display='block';
+      renderRegistro();
+    }
+    cerrarReserva();
+    confirmarPendiente(CONFIRMAR_ID);
   }
 
   // Mismo formato que el mensaje del modo "marcar ocupado": llega a tu WhatsApp para reenviarlo a la casera
@@ -1117,7 +1161,7 @@
   reservasRef.onSnapshot((snap)=>{
     reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     if (admin) renderRegistro();
-    if (!snap.metadata || !snap.metadata.fromCache) limpiarPendientesVencidas();
+    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); mostrarPanelConfirmar(); }
   }, (err)=>{
     mostrarToast('Sin conexion al registro de reservas');
   });

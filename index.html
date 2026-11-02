@@ -777,12 +777,15 @@
     reservasRef.doc(id).update({ estado:'confirmada', senia, saldo:r.total-senia })
       .then(()=>mostrarToast('Reserva confirmada'))
       .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
-    if(r.tel && confirm('Seña registrada. ¿Abrir WhatsApp para avisarle al cliente que su reserva está confirmada?')){
-      enviarConfirmacion(id, senia);
-    }
-    if(confirm('¿Armar el mensaje con las fechas para reenviarle a la casera?')){
-      enviarACasera(id, senia);
-    }
+    // Botones en un cartel: cada uno se toca aparte, asi el navegador no bloquea la segunda ventana
+    const cliente=r.tel?`<button class="btn-ok" onclick="enviarConfirmacion('${id}', ${senia})">💬 Avisar al cliente</button>`:'';
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ Reserva confirmada</h3>
+      <div class="nota">${r.cabana} · ${r.nombre||''} · Seña ${formatPrecio(senia)}</div>
+      ${cliente}
+      <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="enviarACasera('${id}', ${senia})">🏠 Mensaje para la casera</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
   }
 
   // ---- Link "?confirmar=ID" que llega en el mensaje de WhatsApp de la reserva online ----

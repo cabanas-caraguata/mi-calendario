@@ -832,16 +832,33 @@
       if(r.estado==='pendiente'){
         html=`<h3>⏳ Reserva pendiente</h3>${datos}
           <div class="linea"><span>Seña pedida:</span><span>${formatPrecio(r.senia_pedida||0)}</span></div>
-          <button class="btn-ok" onclick="confirmarDesdeLink()">✅ Pago recibido, confirmar</button>`;
+          <button class="btn-ok" onclick="confirmarDesdeLink()">✅ Pago recibido, confirmar</button>
+          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 No pagó, eliminar y liberar fechas</button>`;
       } else {
         html=`<h3>✅ Esta reserva ya está confirmada</h3>${datos}
           <div class="linea"><span>Seña:</span><span>${formatPrecio(r.senia||0)}</span></div>
           ${r.tel?`<button class="btn-ok" onclick="enviarConfirmacion('${r.id}')">💬 Avisar al cliente</button>`:''}
-          <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="mandarCasera('${r.id}', ${r.senia||0})">🏠 Mensaje para la casera</button>`;
+          <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="mandarCasera('${r.id}', ${r.senia||0})">🏠 Mensaje para la casera</button>
+          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 Eliminar reserva</button>
+          <div class="nota" style="margin-top:0.4rem">Al eliminar una reserva ya confirmada, las fechas siguen marcadas: si querés liberarlas, destildalas en el calendario.</div>`;
       }
     }
     document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
     document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function pedirAdmin(){
+    if(admin) return true;
+    const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return false; }
+    admin=true;
+    document.getElementById('btn-admin').textContent="Salir del modo admin";
+    document.getElementById('registro-contenedor').style.display='block';
+    renderRegistro();
+    return true;
+  }
+  function eliminarDesdeLink(){
+    if(!pedirAdmin()) return;
+    cerrarReserva();
+    eliminarReserva(CONFIRMAR_ID);
   }
   function confirmarDesdeLink(){
     if(!admin){

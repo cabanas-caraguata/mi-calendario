@@ -219,7 +219,7 @@
     titular: "Ruben Isaac Akselman (Mercado Pago)",  // <-- nombre del titular de la cuenta
     seniaPct: 0.5                  // porcentaje de la seña (0.5 = 50%)
   };
-  const MINUTOS_PENDIENTE = 30; // si no tocan "Adjuntar comprobante" en este tiempo, la reserva pendiente se libera sola
+  const MINUTOS_PENDIENTE = 30; // si no se llega a abrir WhatsApp con la reserva en este tiempo, la reserva pendiente se libera sola
   const RESERVA_ONLINE = new URLSearchParams(location.search).get('reservar') === '1';
 
   const firebaseConfig = {
@@ -643,13 +643,17 @@
         <div class="seña-monto">${formatPrecio(senia)}</div>
       </div>
       <div class="alias-box">
-        <div style="font-size:0.8rem;color:#6b6254">1) Copiá el alias y depositá la seña:</div>
+        <div style="font-size:0.8rem;color:#6b6254">Alias para depositar la seña:</div>
         <div class="alias-txt" id="alias-txt">${PAGO.alias}</div>
         <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
         <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
       </div>
-      <div class="nota">2) Al tocar el botón verde se reservan tus fechas. 3) En el paso siguiente adjuntás el comprobante y lo mandás por WhatsApp.</div>
-      <button class="btn-ok" id="btn-ya-deposite" onclick="confirmarReservaOnline()">Ya deposité, reservar mis fechas</button>
+      <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">
+        <strong>1)</strong> Tocá el botón verde: tus fechas quedan reservadas y se abre WhatsApp con tu reserva y el alias. <strong>Enviá ese mensaje.</strong><br>
+        <strong>2)</strong> Depositá la seña cuando quieras (antes o después).<br>
+        <strong>3)</strong> Mandanos el comprobante <strong>en ese mismo chat</strong> de WhatsApp. Desde Mercado Pago: "Compartir comprobante" → WhatsApp.
+      </div>
+      <button class="btn-ok" id="btn-ya-deposite" onclick="confirmarReservaOnline()">Reservar y enviar por WhatsApp</button>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cancelar</button>
     `;
     document.getElementById('modal-reserva').classList.add('abierto');
@@ -690,7 +694,7 @@
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nuevaRef=reservasRef.doc();
     const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
-    const msg=`RESERVA ONLINE - COMPROBANTE DE PAGO\n\nReservé estas fechas y te envío el comprobante de la seña.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña depositada: ${formatPrecio(r.senia)}\n\nAdjunto el comprobante a continuación.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nTe mando el comprobante por este chat.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
     const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       nuevaRef.set({
@@ -709,7 +713,7 @@
       await Promise.race([guardar,espera]);
     }catch(e){
       mostrarToast('Error al guardar, revisa tu conexion');
-      if(btn){ btn.disabled=false; btn.textContent='Ya deposité, reservar mis fechas'; }
+      if(btn){ btn.disabled=false; btn.textContent='Reservar y enviar por WhatsApp'; }
       return;
     }
     fechas.forEach(k=>{ if(!(ocupadas[r.cabId]||[]).includes(k)){ ocupadas[r.cabId]=ocupadas[r.cabId]||[]; ocupadas[r.cabId].push(k); } });
@@ -720,14 +724,15 @@
       <h3>✅ Fechas reservadas</h3>
       <div class="nota" style="font-size:0.95rem;color:#2c241b">Tus fechas quedaron reservadas a nombre de <strong>${nombre}</strong>: ${formatFechaCorta(new Date(r.entrada+'T00:00:00'))} al ${formatFechaCorta(new Date(r.salida+'T00:00:00'))}.</div>
       <div class="seña-box">
-        <div>Ultimo paso</div>
-        <div style="font-size:1.05rem;font-weight:700;margin-top:0.3rem">Adjuntá tu comprobante de pago y mandalo por WhatsApp</div>
+        <div>Abriendo WhatsApp...</div>
+        <div style="font-size:1.05rem;font-weight:700;margin-top:0.3rem">Enviá el mensaje con tu reserva y después mandanos el comprobante en ese mismo chat</div>
       </div>
-      <a class="btn-ok" href="${waUrl}" onclick="return enviarComprobante(event)" style="text-decoration:none;text-align:center;box-sizing:border-box">Adjuntar comprobante por WhatsApp</a>
-      <div class="nota" style="margin-top:0.6rem">Se abre WhatsApp con tus datos ya escritos. Tocá el clip 📎, elegí la foto o captura del comprobante y enviá. La reserva queda confirmada cuando verificamos el pago.</div>
-      <div class="nota" style="margin-top:0.4rem"><strong>Importante:</strong> tenés ${MINUTOS_PENDIENTE} minutos para tocar el botón verde. Pasado ese tiempo, las fechas se liberan solas.</div>
+      <a class="btn-ok" href="${waUrl}" onclick="return enviarComprobante(event)" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
+      <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp. La reserva queda confirmada cuando verificamos el pago.</div>
+      <div class="nota" style="margin-top:0.4rem"><strong>Importante:</strong> si no se envía el mensaje por WhatsApp en ${MINUTOS_PENDIENTE} minutos, las fechas se liberan solas.</div>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
     `;
+    enviarComprobante();
   }
 
   let reservaCreada=null;

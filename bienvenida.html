@@ -133,6 +133,14 @@
   .sub { font-weight:700; color:var(--verde); margin:12px 0 4px; }
   .pie { text-align: center; color: var(--gris); font-size: 0.95rem; margin-top: 22px; }
   .pie strong { color: var(--verde); font-size: 1.1rem; display: block; margin-bottom: 4px; }
+
+  .check { list-style: none; padding-left: 0 !important; }
+  .check li { padding-left: 1.6rem; position: relative; }
+  .check li::before { content: "✅"; position: absolute; left: 0; font-size: 0.95rem; }
+  .check ul { list-style: disc; padding-left: 1.2rem; margin-top: 4px; }
+  .check ul li { padding-left: 0; }
+  .check ul li::before { content: none; }
+  .equipo { columns: 2; column-gap: 18px; }
 </style>
 </head>
 <body>
@@ -151,13 +159,14 @@
     <div class="indice-grid">
       <a href="#horarios">🕐 Horarios</a>
       <a href="#llegar">🗺️ Cómo llegar</a>
-      <a href="#wifi">📶 Wifi</a>
+      <a href="#llevar">🎒 Qué llevar</a>
       <a href="#viajar">🚤 Antes de viajar</a>
+      <a href="#wifi">📶 Wifi</a>
+      <a href="#almacen">🛒 Almacén</a>
       <a href="#residuos">♻️ Residuos</a>
       <a href="#vecinos">🏡 Vecinos</a>
       <a href="#irte">🧹 Al irte</a>
       <a href="#emergencias">🚑 Emergencias</a>
-      <a href="#almacen">🛒 Almacén</a>
     </div>
   </div>
 
@@ -166,6 +175,49 @@
     <div class="fila"><span>Entrada</span><strong>Desde las 8 hs</strong></div>
     <div class="fila"><span>Salida</span><strong>Última lancha, 18 hs</strong></div>
     <p style="margin-top:8px">El día de la salida tenés que estar en el muelle para tomar la última lancha de las 18 hs.</p>
+    <a class="arriba" href="#arriba">↑ Volver arriba</a>
+  </div>
+
+  <div class="card" id="llevar">
+    <h2>🎒 Qué tenés que llevar</h2>
+    <ul class="check">
+      <li><strong>Sábanas</strong></li>
+      <li><strong>Toallas</strong></li>
+      <li><strong>Agua potable</strong></li>
+      <li>Off o repelente para insectos</li>
+      <li>Por las dudas: velas, linterna o luz de emergencia</li>
+      <li>Artículos de limpieza:
+        <ul>
+          <li>Detergente</li>
+          <li>Esponja</li>
+          <li>Papel higiénico</li>
+          <li>Bolsas de residuos</li>
+        </ul>
+      </li>
+      <li>Artículos de higiene personal</li>
+      <li><strong>Toda la comida</strong> (también sal, aceite, vinagre)</li>
+      <li>Carbón y encendedor</li>
+    </ul>
+    <div class="alerta" style="background:var(--aviso);border-left-color:var(--aviso-borde)">
+      <strong>Recordá que estás en una isla:</strong> allá no hay nada para comprar, solo en la lancha almacén. Hacete una lista y llevá todo.
+    </div>
+
+    <p class="sub">🏡 Las casas están equipadas con</p>
+    <ul class="equipo">
+      <li>Heladera con freezer</li>
+      <li>Cocina a gas</li>
+      <li>Horno eléctrico</li>
+      <li>Pava eléctrica</li>
+      <li>Platos, vasos y cubiertos</li>
+      <li>Ollas y sartenes</li>
+      <li>Parrilla privada</li>
+      <li>Frazadas</li>
+      <li>Estufas</li>
+      <li>Ventiladores</li>
+    </ul>
+
+    <p style="margin-top:10px">Si no querés viajar muy cargado, en la <strong>lancha almacén</strong> podés comprar carbón, bidones de agua, bebidas y otros productos básicos.</p>
+    <a class="boton claro" href="#almacen">🛒 Ver horarios de la lancha almacén</a>
     <a class="arriba" href="#arriba">↑ Volver arriba</a>
   </div>
 

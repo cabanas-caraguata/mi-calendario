@@ -16,6 +16,7 @@
   header p { font-size:0.85rem; color:var(--agua); letter-spacing:0.08em; text-transform:uppercase; }
   .leyenda { display:flex; gap:1rem; justify-content:center; padding:0.8rem; font-size:0.75rem; flex-wrap:wrap; background:white; border-bottom:1px solid #e0d8cc; }
   .leyenda-item { display:flex; align-items:center; gap:0.4rem; }
+  .leyenda-casa { gap:0.6rem; padding:0.5rem 0.4rem; font-size:0.7rem; background:#fdfdfd; border-bottom:1px solid #f0ece4; }
   .dot { width:14px; height:14px; border-radius:3px; }
   .cabanas-grid { display:grid; grid-template-columns:1fr; }
   @media (min-width:700px) { .cabanas-grid { grid-template-columns:1fr 1fr; } }
@@ -118,12 +119,6 @@
   <h1>Cabañas Caraguatá</h1>
   <p>Disponibilidad · Reservá por WhatsApp</p>
 </header>
-<div class="leyenda">
-  <div class="leyenda-item"><div class="dot" style="background:#d4ead7"></div> Disponible</div>
-  <div class="leyenda-item"><div class="dot" style="background:#e03030"></div> Ocupado</div>
-  <div class="leyenda-item"><div class="dot" style="background:#a8c5c0"></div> Hoy</div>
-  <div class="leyenda-item"><div class="dot" style="background:#f0c040"></div> Seleccionado</div>
-</div>
 <div class="cabanas-grid" id="cabanas-grid"></div>
 <div id="registro-contenedor" style="display:none">
   <div class="registro-panel">
@@ -1178,6 +1173,12 @@
           <button onclick="cambiarMesCabana('${cab.id}',-1)">&#8592;</button>
           <h2 id="titulo-${cab.id}"></h2>
           <button onclick="cambiarMesCabana('${cab.id}',1)">&#8594;</button>
+        </div>
+        <div class="leyenda leyenda-casa">
+          <div class="leyenda-item"><div class="dot" style="background:#d4ead7"></div> Disponible</div>
+          <div class="leyenda-item"><div class="dot" style="background:#e03030"></div> Ocupado</div>
+          <div class="leyenda-item"><div class="dot" style="background:#a8c5c0"></div> Hoy</div>
+          <div class="leyenda-item"><div class="dot" style="background:#f0c040"></div> Seleccionado</div>
         </div>
         <div class="instruccion">Toca la fecha de entrada</div>
         <div class="dias-semana"><span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span></div>

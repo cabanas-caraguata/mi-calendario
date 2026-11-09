@@ -154,6 +154,27 @@
     const senia = parseFloat(document.getElementById('p-senia-'+id).value)||0;
     document.getElementById('p-llegada-'+id).value = Math.max(0, r.total - senia);
     actualizarSaldo(id);
+    avisarPagoTotal(r);
+    guardarPagos(id);
+  }
+
+  function telWhatsApp(tel){
+    let n = String(tel||'').replace(/\D/g,'').replace(/^54/,'').replace(/^0/,'');
+    if(n.length===11 && n[0]==='9') n = n.slice(1);
+    if(n.length===10 && n.startsWith('15')) n = '11' + n.slice(2);
+    if(n.length===12 && n.startsWith('1115')) n = '11' + n.slice(4);
+    return '549' + n;
+  }
+
+  function avisarPagoTotal(r){
+    if(!r.tel) return;
+    const _h = new Date();
+    const hoy = _h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
+    const resena = 'https://g.page/r/CdzvbHsO9WpWEBE/review';
+    const msg = (r.salida||'') <= hoy
+      ? '¡Hola! Recibimos el pago total, muchas gracias por elegirnos 😊\nSi la pasaron lindo, nos ayuda mucho una reseña en Google:\n' + resena
+      : '¡Hola! Recibimos el pago total, muchas gracias 😊 ¡Que disfruten la estadía!\nSi la pasan lindo, nos ayuda mucho una reseña en Google:\n' + resena;
+    window.open('https://wa.me/' + telWhatsApp(r.tel) + '?text=' + encodeURIComponent(msg), '_blank');
   }
 
   function guardarPagos(id){

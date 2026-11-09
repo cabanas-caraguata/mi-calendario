@@ -37,7 +37,6 @@
   .dia.pasado { opacity:0.3; cursor:default; }
   .dia.libre { background:var(--libre); color:#2d6e3a; }
   .dia.ocupado { background:var(--ocupado); color:white; }
-  .dia.hoy { background:var(--hoy); color:#1a4a47; font-weight:700; box-shadow:0 0 0 2px #5a9a94; }
   .dia.seleccionado { background:var(--sel); color:#5a4000; font-weight:700; }
   .dia.rango { background:var(--rango); color:#5a4000; }
   .resumen-card { margin:0 0.8rem 0.5rem; background:#f9f6f0; border:1px solid #e0d8cc; border-radius:10px; padding:0.8rem 1rem; font-size:0.85rem; }
@@ -1059,14 +1058,13 @@
     for(let i=0;i<ini;i++){const v=document.createElement('div');v.className='dia vacio';cal.appendChild(v);}
     for(let d=1;d<=tot;d++){
       const f=new Date(a,m,d), k=clave(f);
-      const esHoy=k===clave(hoy), esPas=f<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()), esOc=(ocupadas[cabId]||[]).includes(k);
+      const esPas=f<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()), esOc=(ocupadas[cabId]||[]).includes(k);
       const esEnt=sel.entrada&&clave(f)===clave(sel.entrada), esSal=sel.salida&&clave(f)===clave(sel.salida);
       const esRango=sel.entrada&&sel.salida&&f>sel.entrada&&f<sel.salida;
       const div=document.createElement('div');
       let cls='dia';
       if(esEnt||esSal) cls+=' seleccionado';
       else if(esRango) cls+=' rango';
-      else if(esHoy) cls+=' hoy';
       else if(esPas) cls+=' pasado';
       else if(esOc) cls+=' ocupado';
       else cls+=' libre';
@@ -1177,7 +1175,6 @@
         <div class="leyenda leyenda-casa">
           <div class="leyenda-item"><div class="dot" style="background:#d4ead7"></div> Disponible</div>
           <div class="leyenda-item"><div class="dot" style="background:#e03030"></div> Ocupado</div>
-          <div class="leyenda-item"><div class="dot" style="background:#a8c5c0"></div> Hoy</div>
           <div class="leyenda-item"><div class="dot" style="background:#f0c040"></div> Seleccionado</div>
         </div>
         <div class="instruccion">Toca la fecha de entrada</div>

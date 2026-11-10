@@ -252,6 +252,8 @@
 
   // Descuento de lunes a jueves (por dia). No se aplica si ese dia cae en un feriado largo.
   const DESCUENTO_SEMANA = { verde:10000, blanca:10000, roja:20000, marron:20000 };
+  // Desde esta fecha (vacaciones de verano) NO hay descuento: lunes a jueves cuesta igual que el finde
+  const SIN_DESCUENTO_DESDE = new Date(2026, 11, 1); // 1 dic 2026
 
   function esDiaDeFeriado(fecha){
     const k = clave(fecha);
@@ -270,7 +272,7 @@
   function getPrecio(cabId, fecha) {
     let p = getPrecioBase(cabId, fecha);
     const dow = fecha.getDay(); // 1=lunes ... 4=jueves
-    if (dow >= 1 && dow <= 4 && !esDiaDeFeriado(fecha)) p -= (DESCUENTO_SEMANA[cabId] || 0);
+    if (dow >= 1 && dow <= 4 && fecha < SIN_DESCUENTO_DESDE && !esDiaDeFeriado(fecha)) p -= (DESCUENTO_SEMANA[cabId] || 0);
     return p;
   }
 

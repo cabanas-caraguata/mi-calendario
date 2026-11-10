@@ -24,6 +24,7 @@
   .cabana-header { padding:0.8rem 1rem; display:flex; align-items:center; gap:0.7rem; border-bottom:1px solid #f0ece4; }
   .cabana-dot { width:18px; height:18px; border-radius:50%; flex-shrink:0; }
   .cabana-header h3 { font-family:'Playfair Display',serif; font-size:1.1rem; flex:1; }
+  .cabana-cap { font-size:0.8rem; font-weight:600; color:#5a5044; background:#f5f0e8; border:1px solid #e0d8cc; border-radius:12px; padding:0.15rem 0.6rem; white-space:nowrap; }
   .cabana-precio { font-size:1rem; font-weight:700; color:var(--texto); white-space:nowrap; }
   .nav-cabana { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.8rem; background:#fdfdfd; border-bottom:1px solid #f0ece4; }
   .nav-cabana button { background:none; border:1.5px solid var(--texto); border-radius:50%; width:30px; height:30px; font-size:0.9rem; cursor:pointer; color:var(--texto); display:flex; align-items:center; justify-content:center; }
@@ -243,10 +244,10 @@
   ];
 
   const CABANAS = [
-    { id:"verde",  nombre:"Casa Verde",  color:"#4a7c59", precio:60000 },
-    { id:"roja",   nombre:"Casa Roja",   color:"#b5432a", precio:90000 },
-    { id:"blanca", nombre:"Casa Blanca", color:"#b0a898", precio:65000 },
-    { id:"marron", nombre:"Casa Marron", color:"#7a5c3a", precio:100000 }
+    { id:"verde",  nombre:"Casa Verde",  color:"#4a7c59", precio:60000,  capacidad:"Hasta 4 personas" },
+    { id:"blanca", nombre:"Casa Blanca", color:"#b0a898", precio:65000,  capacidad:"Hasta 4 personas" },
+    { id:"roja",   nombre:"Casa Roja",   color:"#b5432a", precio:90000,  capacidad:"Hasta 8 personas" },
+    { id:"marron", nombre:"Casa Marron", color:"#7a5c3a", precio:100000, capacidad:"Hasta 8 personas" }
   ];
 
   // Descuento de lunes a jueves (por dia). No se aplica si ese dia cae en un feriado largo.
@@ -1165,7 +1166,7 @@
         <div class="cabana-header">
           <div class="cabana-dot" style="background:${cab.color}"></div>
           <h3>${cab.nombre}</h3>
-          
+          <span class="cabana-cap">${cab.capacidad}</span>
         </div>
         <div class="nav-cabana">
           <button onclick="cambiarMesCabana('${cab.id}',-1)">&#8592;</button>

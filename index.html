@@ -165,7 +165,7 @@
       <span id="flecha-feriados">▾</span>
     </div>
     <div id="panel-feriados" style="display:none;padding:1rem;background:#eef6f1;border-bottom:1px solid #e0d8cc">
-      <div style="font-size:0.78rem;color:#5a5044;margin-bottom:0.7rem">En estas fechas, si alguien reserva menos dias que el feriado completo, se cobra un dia adicional (los sabados y domingos comunes ya funcionan solos, no hay que cargarlos).</div>
+      <div style="font-size:0.78rem;color:#5a5044;margin-bottom:0.7rem">En estas fechas, si la estadia es mas corta que el feriado completo, se cobran los dias que falten hasta completarlo (los sabados y domingos comunes ya funcionan solos, no hay que cargarlos).</div>
       <div id="lista-feriados" style="margin-bottom:0.8rem"></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:0.6rem">
         <div>
@@ -323,42 +323,60 @@
     return null;
   }
 
-  // Recargo = precio de un dia mas por cada bloque que quede incompleto.
-  // Devuelve el desglose: finde (sabado/domingo comun) y feriado (feriado largo).
+  // Recargos:
+  // 1) Sabado y domingo van juntos: si la estadia termina un sabado, se cobra tambien el domingo
+  //    (si esta libre), para que no quede un domingo suelto. Un domingo solo se cobra doble.
+  //    Domingo + lunes es precio normal.
+  // 2) Feriado largo: la estadia completa (contando dias fuera del feriado y el domingo agregado)
+  //    tiene que llegar al largo del feriado; se cobran solo los dias que falten.
+  //    Ej. feriado vie-dom (3 dias): jue+vie = 2 dias -> se cobra 1 mas (3 en total).
   function calcularRecargo(cabId, entrada, salida) {
-    const bloques = {};
-    let d = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
-    while (d <= salida) {
+    const r = { monto:0, cantidad:0, finde:{monto:0,cantidad:0}, feriado:{monto:0,cantidad:0,dias:0} };
+    const ocup = (ocupadas && ocupadas[cabId]) || [];
+    const e0 = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
+    let s0 = new Date(salida.getFullYear(), salida.getMonth(), salida.getDate());
+    let totalDias = Math.round((s0 - e0)/86400000) + 1;
+    const elegidos = new Set();
+    let d = new Date(e0);
+    while (d <= s0) { elegidos.add(clave(d)); d = sumarDias(d, 1); }
+
+    // 1) Sabado + domingo
+    if (s0.getDay() === 6) {
+      const dom = sumarDias(s0, 1);
+      if (!ocup.includes(clave(dom))) {
+        const m = getPrecio(cabId, dom);
+        r.monto += m; r.cantidad++; r.finde.monto += m; r.finde.cantidad++;
+        elegidos.add(clave(dom)); totalDias++;
+      }
+    } else if (totalDias === 1 && s0.getDay() === 0) {
+      const sab = sumarDias(s0, -1);
+      if (!ocup.includes(clave(sab)) && !esDiaDeFeriado(s0)) {
+        const m = getPrecio(cabId, sab);
+        r.monto += m; r.cantidad++; r.finde.monto += m; r.finde.cantidad++;
+        totalDias++;
+      }
+    }
+
+    // 2) Feriados largos
+    const vistos = new Set();
+    d = new Date(e0);
+    while (d <= s0) {
       const bl = bloqueDe(d);
-      if (bl) {
-        const id = clave(bl.dias[0]);
-        if (!bloques[id]) bloques[id] = { dias: bl.dias, tipo: bl.tipo, elegidos: new Set() };
-        bloques[id].elegidos.add(clave(d));
+      if (bl && bl.tipo === 'feriado' && !vistos.has(clave(bl.dias[0]))) {
+        vistos.add(clave(bl.dias[0]));
+        const faltan = bl.dias.length - totalDias;
+        if (faltan > 0) {
+          const libres = bl.dias.filter(x => !elegidos.has(clave(x)) && !ocup.includes(clave(x))).slice(0, faltan);
+          if (libres.length) {
+            const m = libres.reduce((t, x) => t + getPrecio(cabId, x), 0);
+            r.monto += m; r.cantidad++; r.feriado.monto += m; r.feriado.cantidad++;
+            r.feriado.dias = Math.max(r.feriado.dias, bl.dias.length);
+            totalDias += libres.length;
+          }
+        }
       }
       d = sumarDias(d, 1);
     }
-    const totalDias = Math.round((new Date(salida.getFullYear(),salida.getMonth(),salida.getDate()) - new Date(entrada.getFullYear(),entrada.getMonth(),entrada.getDate()))/86400000) + 1;
-    const r = { monto:0, cantidad:0, finde:{monto:0,cantidad:0}, feriado:{monto:0,cantidad:0,dias:0} };
-    Object.values(bloques).forEach(b => {
-      // Fin de semana comun: el minimo es 2 dias de estadia (ej. vie+sab o dom+lun ya es precio normal).
-      // Solo se cobra doble si reservan UN solo dia.
-      if (b.tipo === 'finde' && totalDias >= 2) return;
-      if (b.elegidos.size < b.dias.length) {
-        // Los dias del bloque que ya estan alquilados en esta casa no se pueden vender,
-        // asi que no se cobran como recargo.
-        const ocup = (ocupadas && ocupadas[cabId]) || [];
-        const libres = b.dias.filter(x => !b.elegidos.has(clave(x)) && !ocup.includes(clave(x)));
-        if (libres.length === 0) return;
-        // Feriado largo: minimo = bloque completo (se cobran todos los dias que falten).
-        // Fin de semana comun: se suma un solo dia (el mas caro de los libres).
-        const m = b.tipo === 'feriado'
-          ? libres.reduce((t, x) => t + getPrecio(cabId, x), 0)
-          : Math.max(...libres.map(x => getPrecio(cabId, x)));
-        r.monto += m; r.cantidad++;
-        r[b.tipo].monto += m; r[b.tipo].cantidad++;
-        if (b.tipo === 'feriado') r.feriado.dias = Math.max(r.feriado.dias, b.dias.length);
-      }
-    });
     return r;
   }
 
@@ -746,7 +764,7 @@
       </div>
       <a class="btn-ok" href="${waUrl}" onclick="return enviarComprobante(event)" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
       <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp. La reserva queda confirmada cuando verificamos el pago.</div>
-      <div class="nota" style="margin-top:0.4rem"><strong>Importante:</strong> si no se envía el mensaje por WhatsApp en ${MINUTOS_PENDIENTE} minutos, las fechas se liberan solas.</div>
+      <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#c62828;font-weight:700">⚠️ Importante: en WhatsApp tocá <u>Enviar</u> para completar la reserva.</div>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
     `;
     enviarComprobante();
@@ -787,7 +805,7 @@
       finally{ limpiando.delete(v.id); }
     }
   }
-  setInterval(limpiarPendientesVencidas,60000);
+  // Las reservas pendientes ya no se liberan solas: quedan hasta que Rubén las confirme o las borre.
 
   function confirmarPendiente(id){
     const r=reservas.find(x=>x.id===id); if(!r) return;
@@ -1121,7 +1139,7 @@
         <div class="linea"><span>Entrada:</span><span>${formatFechaCorta(sel.entrada)} (${HORA_ENTRADA})</span></div>
         <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
         <div class="linea"><span>Dias:</span><span>${dias}</span></div>
-        ${rec.finde.monto?`<div class="linea" style="color:#8a6d00;font-size:0.8rem"><span>Fin de semana: mínimo 2 días</span><span>+${formatPrecio(rec.finde.monto)}</span></div>`:''}
+        ${rec.finde.monto?`<div class="linea" style="color:#8a6d00;font-size:0.8rem"><span>Sábado y domingo van juntos</span><span>+${formatPrecio(rec.finde.monto)}</span></div>`:''}
         ${rec.feriado.monto?`<div class="linea" style="color:#c62828;font-size:0.95rem;font-weight:700"><span>Feriado largo: mínimo ${rec.feriado.dias} días</span><span>+${formatPrecio(rec.feriado.monto)}</span></div>`:''}
         <div class="linea total"><span>Total estimado:</span><span>${formatPrecio(total)}</span></div>
         <button class="reset" onclick="resetSeleccion('${cabId}')">Limpiar seleccion</button>
@@ -1233,7 +1251,7 @@
   reservasRef.onSnapshot((snap)=>{
     reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     if (admin) renderRegistro();
-    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); if(CONFIRMAR_ID) mostrarPanelConfirmar(); else revisarCaseraPend(); }
+    if (!snap.metadata || !snap.metadata.fromCache){ if(CONFIRMAR_ID) mostrarPanelConfirmar(); else revisarCaseraPend(); }
   }, (err)=>{
     mostrarToast('Sin conexion al registro de reservas');
   });

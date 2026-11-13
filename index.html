@@ -214,7 +214,9 @@
     titular: "Ruben Isaac Akselman (Mercado Pago)",  // <-- nombre del titular de la cuenta
     seniaPct: 0.5                  // porcentaje de la seña (0.5 = 50%)
   };
-  const MINUTOS_PENDIENTE = 30; // si no se llega a abrir WhatsApp con la reserva en este tiempo, la reserva pendiente se libera sola
+  const MINUTOS_PENDIENTE = 30; // la reserva pendiente (sin confirmar) se libera sola a los 30 minutos
+  const HORA_DORMIR = 22;      // de noche (desde las 22 hasta las 8) no se libera nada
+  const HORA_DESPERTAR = 8;    // si vence de noche, se libera a las 8:30 (8 + 30 minutos)
   const RESERVA_ONLINE = true;
 
   const firebaseConfig = {
@@ -783,9 +785,21 @@
   }
 
   const limpiando=new Set();
+  // Hora en que vence una reserva pendiente (hora de Argentina, UTC-3).
+  function venceMs(creado){
+    const H=3600000, AR=-3*H;
+    let v=creado+MINUTOS_PENDIENTE*60000;
+    const local=new Date(v+AR), hora=local.getUTCHours();
+    if(hora>=HORA_DORMIR || hora<HORA_DESPERTAR){
+      const d=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()));
+      if(hora>=HORA_DORMIR) d.setUTCDate(d.getUTCDate()+1);
+      v=d.getTime()+HORA_DESPERTAR*H+MINUTOS_PENDIENTE*60000-AR;
+    }
+    return v;
+  }
   async function limpiarPendientesVencidas(){
-    const ahora=Date.now(), lim=MINUTOS_PENDIENTE*60000;
-    const vencidas=reservas.filter(r=>r.estado==='pendiente' && !r.comprobante_enviado && r.creado_ms && (ahora-r.creado_ms)>lim && !limpiando.has(r.id));
+    const ahora=Date.now();
+    const vencidas=reservas.filter(r=>r.estado==='pendiente' && r.creado_ms && ahora>venceMs(r.creado_ms) && !limpiando.has(r.id));
     for(const v of vencidas){
       limpiando.add(v.id);
       try{
@@ -793,7 +807,7 @@
         const d=await reservasRef.doc(v.id).get({source:'server'});
         if(!d.exists) continue;
         const r=d.data();
-        if(r.estado!=='pendiente' || r.comprobante_enviado || !r.creado_ms || (Date.now()-r.creado_ms)<=lim) continue;
+        if(r.estado!=='pendiente' || !r.creado_ms || Date.now()<=venceMs(r.creado_ms)) continue;
         const cab=CABANAS.find(c=>c.nombre===r.cabana); if(!cab) continue;
         let fechas=fechasEntreStr(r.entrada,r.salida);
         // no liberar dias que cubra otra reserva de la misma cabaña
@@ -805,7 +819,8 @@
       finally{ limpiando.delete(v.id); }
     }
   }
-  // Las reservas pendientes ya no se liberan solas: quedan hasta que Rubén las confirme o las borre.
+  // Las reservas pendientes se liberan solas a los 30 minutos (de noche, a las 8:30). Se revisa cada minuto.
+  setInterval(limpiarPendientesVencidas, 60000);
 
   function confirmarPendiente(id){
     const r=reservas.find(x=>x.id===id); if(!r) return;
@@ -1251,7 +1266,7 @@
   reservasRef.onSnapshot((snap)=>{
     reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     if (admin) renderRegistro();
-    if (!snap.metadata || !snap.metadata.fromCache){ if(CONFIRMAR_ID) mostrarPanelConfirmar(); else revisarCaseraPend(); }
+    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); if(CONFIRMAR_ID) mostrarPanelConfirmar(); else revisarCaseraPend(); }
   }, (err)=>{
     mostrarToast('Sin conexion al registro de reservas');
   });

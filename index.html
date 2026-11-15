@@ -958,7 +958,7 @@
       `Seña recibida: ${formatPrecio(senia)}\n`+
       `*Saldo a abonar al llegar: ${formatPrecio(saldo)}*\n\n`+
       `Es muy importante que leas con atención toda la información de tu estadía (horarios, cómo llegar, wifi, normas y emergencias):\n${INFO_URL}\n\n`+
-      `El saldo lo podés pagar en efectivo al llegar o por transferencia. Para transferir, entrá a este link y seguí los pasos:\n${CAL_URL}?pagar=${r.id}\n\n`+
+      `El saldo lo podés pagar en efectivo a Yami cuando llegues, o por transferencia. Para transferir, entrá a este link y seguí los pasos:\n${CAL_URL}?pagar=${r.id}\n\n`+
       `Gracias y disfrutá la estadía.`;
   }
 
@@ -1003,7 +1003,7 @@
         <strong>2)</strong> Tocá el botón verde: se abre WhatsApp con el aviso de pago. <strong>Enviá ese mensaje.</strong><br>
         <strong>3)</strong> Mandanos el comprobante <strong>en ese mismo chat</strong>. Desde Mercado Pago: "Compartir comprobante" → WhatsApp.
       </div>
-      <div class="nota">Si preferís, también podés pagar en efectivo al llegar a la casa.</div>
+      <div class="nota">Si preferís, también podés pagar en efectivo a Yami cuando llegues a la casa.</div>
       <button class="btn-ok" onclick="avisarPagoResto('${r?r.id:''}')">Avisar el pago por WhatsApp</button>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
     `;

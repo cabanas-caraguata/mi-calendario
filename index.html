@@ -403,7 +403,13 @@
   const hoy = new Date();
   let meses={}, seleccion={};
   CABANAS.forEach(c=>{ meses[c.id]=new Date(hoy.getFullYear(),hoy.getMonth(),1); seleccion[c.id]={entrada:null,salida:null}; });
-  let admin = new URLSearchParams(location.search).get('admin') === PASS;
+  // El modo admin queda abierto un rato en este celular (se renueva cada vez que entras)
+  const ADMIN_KEY = 'admin_hasta';
+  const HORAS_ADMIN = 2;
+  function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
+  function recordarAdmin(on){ try{ on ? localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)) : localStorage.removeItem(ADMIN_KEY); }catch(e){} }
+  let admin = new URLSearchParams(location.search).get('admin') === PASS || adminGuardado();
+  if(admin) recordarAdmin(true);
 
   function clave(f){ return f.getFullYear()+'-'+String(f.getMonth()+1).padStart(2,'0')+'-'+String(f.getDate()).padStart(2,'0'); }
   function formatFecha(f){ return f.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -430,6 +436,7 @@
   function toggleAdmin(){
     if(!admin){ const p=prompt("Contrasena:"); if(p!==PASS){alert("Incorrecta.");return;} }
     admin=!admin;
+    recordarAdmin(admin);
     document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
     document.getElementById('registro-contenedor').style.display=admin?'block':'none';
     if(admin){
@@ -909,7 +916,7 @@
   function pedirAdmin(){
     if(admin) return true;
     const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return false; }
-    admin=true;
+    admin=true; recordarAdmin(true);
     document.getElementById('btn-admin').textContent="Salir del modo admin";
     document.getElementById('registro-contenedor').style.display='block';
     renderRegistro();
@@ -923,7 +930,7 @@
   function confirmarDesdeLink(){
     if(!admin){
       const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return; }
-      admin=true;
+      admin=true; recordarAdmin(true);
       document.getElementById('btn-admin').textContent="Salir del modo admin";
       document.getElementById('registro-contenedor').style.display='block';
       renderRegistro();
@@ -1128,7 +1135,7 @@
         <td data-label="Notas">${r.notas||'-'}</td>
         <td>
           ${pend?`<button class="btn-editar" title="Confirmar pago" onclick="confirmarPendiente('${r.id}')">✅</button>`:''}
-          ${(!pend&&r.estado==='confirmada')?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
+          ${!pend?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
           ${(!pend&&r.tel&&r.estado==='confirmada')?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
           <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
           <button class="btn-eliminar" onclick="eliminarReserva('${r.id}')">X</button>
@@ -1309,7 +1316,11 @@
     });
     document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
     document.getElementById('registro-contenedor').style.display=admin?'block':'none';
-    if(admin) renderRegistro();
+    if(admin){
+      renderRegistro();
+      const sel=document.getElementById('manual-cabana');
+      if(sel && !sel.options.length) CABANAS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
+    }
     CABANAS.forEach(c=>actualizarResumen(c.id));
   }
 

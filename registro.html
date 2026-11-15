@@ -95,14 +95,36 @@
 
   let reservas = [];
 
+  // Comparte con el calendario el modo admin abierto por un rato (2 horas, se renueva al entrar)
+  const ADMIN_KEY = 'admin_hasta';
+  const HORAS_ADMIN = 2;
+  function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
+  function recordarAdmin(){ try{ localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)); }catch(e){} }
+
   function intentarLogin(){
     const p = document.getElementById('pass-input').value;
     if (p !== PASS) { alert('Contraseña incorrecta.'); return; }
+    entrar();
+  }
+  function entrar(){
+    recordarAdmin();
     document.getElementById('login').style.display = 'none';
     document.getElementById('contenido').style.display = 'block';
     escucharReservas();
   }
   document.getElementById('pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') intentarLogin(); });
+  if (adminGuardado()) entrar();
+
+  // Mensaje para la casera: te llega a tu WhatsApp para reenviárselo a Yami
+  function enviarACasera(id){
+    const r = reservas.find(x=>x.id===id); if(!r) return;
+    const f = (k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    let msg = `${(r.cabana||'').replace('Casa ','')} ${f(r.entrada)} al ${f(r.salida)}`;
+    if(r.tel) msg += `\nTel: ${r.tel}`;
+    msg += `\nNotas: ${r.nombre||r.notas||''}`;
+    msg += `\nSeña: ${formatPrecio(r.senia||0)}\nResto a pagar: ${formatPrecio(Math.max(0,saldoDe(r)))}`;
+    window.open('https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg),'_blank');
+  }
 
   function fechaCorta(fechaStr){
     if(!fechaStr) return "-";
@@ -257,6 +279,7 @@
             <div><div class="etiqueta">Notas</div><div class="valor">${r.notas||'-'}</div></div>
           </div>
           ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
+          ${r.estado==='pendiente' ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="enviarACasera('${r.id}')">🏠 Mensaje para Yami</button>`}
         </div>`;
     };
     lista.innerHTML =

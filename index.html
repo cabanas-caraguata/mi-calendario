@@ -678,10 +678,10 @@
       <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
       <div class="linea"><span>Dias:</span><span>${dias}</span></div>
       <div class="linea"><strong>Total estimado:</strong><strong>${formatPrecio(total)}</strong></div>
-      <div style="margin:0.6rem 0 0.2rem">
-        <input id="rsv-nombre" type="text" autocomplete="name" placeholder="Tu nombre y apellido" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem;margin-bottom:0.4rem">
-        <input id="rsv-tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
-      </div>
+      <form autocomplete="on" onsubmit="return false" style="margin:0.6rem 0 0.2rem">
+        <input id="rsv-nombre" name="name" type="text" autocomplete="name" placeholder="Tu nombre y apellido" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem;margin-bottom:0.4rem">
+        <input id="rsv-tel" name="tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
+      </form>
       <div class="seña-box">
         <div>Seña para reservar (${pct}%)</div>
         <div class="seña-monto">${formatPrecio(senia)}</div>
@@ -1100,7 +1100,7 @@
     document.getElementById('modal-contenido').innerHTML=`
       <h3>📎 Subí tu comprobante</h3>
       <div class="nota" style="font-size:0.9rem;color:#2c241b">Poné el teléfono que usaste al reservar.</div>
-      <input id="tel-comp" type="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
+      <input id="tel-comp" name="tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
       <button class="btn-ok" onclick="buscarReservaPorTel()">Buscar mi reserva</button>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
     document.getElementById('modal-reserva').classList.add('abierto');

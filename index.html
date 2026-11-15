@@ -699,8 +699,9 @@
       </div>
       <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">
         <strong>1)</strong> Tocá el botón verde: tus fechas quedan reservadas y se abre WhatsApp con tu reserva y el alias. <strong>Enviá ese mensaje.</strong><br>
-        <strong>2)</strong> Depositá la seña cuando quieras (antes o después).<br>
-        <strong>3)</strong> Mandanos el comprobante <strong>en ese mismo chat</strong> de WhatsApp. Desde Mercado Pago: "Compartir comprobante" → WhatsApp.
+        <strong>2)</strong> Depositá la seña.<br>
+        <strong>3)</strong> Tocá el link que quedó en tu mensaje de WhatsApp y <strong>subí el comprobante</strong>. Listo: tu reserva queda confirmada.<br>
+        ⏱️ <strong>Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante.</strong> Si no, la reserva se elimina sola y las fechas se liberan.
       </div>
       <button class="btn-ok" id="btn-ya-deposite" onclick="confirmarReservaOnline()">Reservar y enviar por WhatsApp</button>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cancelar</button>
@@ -743,7 +744,7 @@
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nuevaRef=reservasRef.doc();
     const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
-    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nTe mando el comprobante por este chat.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
     const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       nuevaRef.set({
@@ -774,10 +775,11 @@
       <div class="nota" style="font-size:0.95rem;color:#2c241b">Tus fechas quedaron reservadas a nombre de <strong>${nombre}</strong>: ${formatFechaCorta(new Date(r.entrada+'T00:00:00'))} al ${formatFechaCorta(new Date(r.salida+'T00:00:00'))}.</div>
       <div class="seña-box">
         <div>Abriendo WhatsApp...</div>
-        <div style="font-size:1.05rem;font-weight:700;margin-top:0.3rem">Enviá el mensaje con tu reserva y después mandanos el comprobante en ese mismo chat</div>
+        <div style="font-size:1.05rem;font-weight:700;margin-top:0.3rem">Enviá el mensaje con tu reserva. Cuando pagues, tocá el link de ese mensaje para subir el comprobante</div>
       </div>
       <a class="btn-ok" href="${waUrl}" onclick="return enviarComprobante(event)" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
-      <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp. La reserva queda confirmada cuando verificamos el pago.</div>
+      <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp, junto con el link para subir el comprobante.</div>
+      <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#2c241b;font-weight:700">⏱️ Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante. Si no, la reserva se elimina sola y las fechas se liberan.</div>
       <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#c62828;font-weight:700">⚠️ Importante: en WhatsApp tocá <u>Enviar</u> para completar la reserva.</div>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
     `;
@@ -902,12 +904,16 @@
           <button class="btn-ok" onclick="confirmarDesdeLink()">✅ Pago recibido, confirmar</button>
           <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 No pagó, eliminar y liberar fechas</button>`;
       } else {
-        html=`<h3>✅ Esta reserva ya está confirmada</h3>${datos}
+        const revisar=r.pago_verificado===false;
+        html=`<h3>${revisar?'📎 Comprobante subido':'✅ Esta reserva ya está confirmada'}</h3>${datos}
           <div class="linea"><span>Seña:</span><span>${formatPrecio(r.senia||0)}</span></div>
+          ${revisar?`<div class="nota" style="color:#8a5a00;font-weight:700">🔎 Revisá en Mercado Pago que haya entrado la plata.</div>`:''}
+          ${r.comprobante_subido?`<button class="btn-ok" style="background:#5a6b7a" onclick="verComprobante('${r.id}')">👁 Ver comprobante</button>`:''}
+          ${revisar?`<button class="btn-ok" onclick="pagoOkDesdeLink('${r.id}')">✔ La plata entró</button>`:''}
           ${r.tel?`<button class="btn-ok" onclick="enviarConfirmacion('${r.id}')">💬 Avisar al cliente</button>`:''}
           <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="mandarCasera('${r.id}', ${r.senia||0})">🏠 Mensaje para la casera</button>
-          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 Eliminar reserva</button>
-          <div class="nota" style="margin-top:0.4rem">Al eliminar una reserva ya confirmada, las fechas siguen marcadas: si querés liberarlas, destildalas en el calendario.</div>`;
+          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 ${revisar?'Comprobante trucho: eliminar y liberar fechas':'Eliminar reserva'}</button>
+          ${revisar?'':`<div class="nota" style="margin-top:0.4rem">Al eliminar una reserva ya confirmada, las fechas siguen marcadas: si querés liberarlas, destildalas en el calendario.</div>`}`;
       }
     }
     document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
@@ -1044,13 +1050,161 @@
     window.open('https://api.whatsapp.com/send?phone=54'+num+'&text='+encodeURIComponent(mensajeConfirmacion(r,senia)),'_blank');
   }
 
+  // ---------------------------------------------------------------
+  // SUBIR COMPROBANTE (link "?comprobante=ID" que va en el mensaje RESERVA ONLINE)
+  // El cliente sube la foto o el PDF: la reserva queda confirmada sola (seña = la pedida)
+  // y marcada "REVISAR PAGO" hasta que Rubén ve que la plata entró. Si es trucho, la elimina
+  // y las fechas se liberan.
+  // ---------------------------------------------------------------
+  const COMPROBANTE_ID = new URLSearchParams(location.search).get('comprobante');
+  const comprobantesRef = db.collection('calendario').doc('_comprobantes').collection('items');
+  let subirMostrado=false;
+
+  function mostrarSubirComprobante(){
+    if(!COMPROBANTE_ID || subirMostrado) return;
+    subirMostrado=true;
+    const r=reservas.find(x=>x.id===COMPROBANTE_ID);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    let html;
+    if(!r){
+      html=`<h3>Reserva no encontrada</h3><div class="nota" style="font-size:0.9rem;color:#2c241b">Puede que se haya vencido (pasaron más de ${MINUTOS_PENDIENTE} minutos sin subir el comprobante). Escribinos por WhatsApp al 11 5846-7707 y lo vemos.</div>`;
+    } else if(r.comprobante_subido){
+      html=`<h3>✅ Ya recibimos tu comprobante</h3>
+        <div class="nota" style="font-size:0.9rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}. Tu reserva está confirmada.</div>
+        <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box">Ver la info de tu estadía</a>`;
+    } else {
+      html=`<h3>📎 Subí tu comprobante</h3>
+        <div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+        ${r.nombre?`<div class="linea"><span>Nombre:</span><span>${r.nombre}</span></div>`:''}
+        <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
+        <div class="seña-box"><div>Seña</div><div class="seña-monto">${formatPrecio(r.senia_pedida||0)}</div></div>
+        <div class="alias-box">
+          <div style="font-size:0.8rem;color:#6b6254">¿Todavía no pagaste? Alias:</div>
+          <div class="alias-txt">${PAGO.alias}</div>
+          <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
+          <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
+        </div>
+        <div class="nota" style="font-size:0.85rem;color:#2c241b">Tocá el botón y elegí la foto o el PDF del comprobante.</div>
+        <input type="file" id="input-comprobante" accept="image/*,application/pdf" style="display:none" onchange="subirComprobante(this)">
+        <button class="btn-ok" id="btn-subir" onclick="document.getElementById('input-comprobante').click()">📎 Subir comprobante</button>`;
+    }
+    document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  function leerArchivo(file){
+    return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
+  }
+  // Achica la foto para que entre en la base de datos (max 1400 px, jpg)
+  function achicarImagen(dataUrl){
+    return new Promise((res)=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1400, k=Math.min(1, max/Math.max(img.width,img.height));
+        const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+        const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+        let q=0.75, out=c.toDataURL('image/jpeg',q);
+        while(out.length>700000 && q>0.3){ q-=0.15; out=c.toDataURL('image/jpeg',q); }
+        res(out);
+      };
+      img.onerror=()=>res(null);
+      img.src=dataUrl;
+    });
+  }
+
+  async function subirComprobante(input){
+    const file=input.files&&input.files[0]; if(!file) return;
+    const r=reservas.find(x=>x.id===COMPROBANTE_ID); if(!r) return;
+    const btn=document.getElementById('btn-subir');
+    const volver=()=>{ if(btn){ btn.disabled=false; btn.textContent='📎 Subir comprobante'; } input.value=''; };
+    if(btn){ btn.disabled=true; btn.textContent='Subiendo...'; }
+    try{
+      let data=await leerArchivo(file), tipo='imagen';
+      if(file.type==='application/pdf'){
+        tipo='pdf';
+        if(data.length>900000){ alert('El PDF es muy pesado. Mandá una captura de pantalla del comprobante, por favor.'); volver(); return; }
+      } else {
+        data=await achicarImagen(data);
+        if(!data){ alert('No se pudo leer esa imagen. Probá con una captura de pantalla.'); volver(); return; }
+      }
+      const archivo={ data, tipo, nombre:(file.name||'').slice(0,80), subido_ms:Date.now() };
+      // se guarda aparte, asi el calendario no se pone lento; si no se puede, va dentro de la reserva
+      try{ await comprobantesRef.doc(r.id).set(archivo); }
+      catch(e){ await reservasRef.doc(r.id).update({ comprobante_archivo: archivo }); }
+      const senia=r.senia_pedida||0;
+      await reservasRef.doc(r.id).update({
+        estado:'confirmada', senia, saldo:(r.total||0)-senia,
+        comprobante_subido:true, comprobante_ms:Date.now(), pago_verificado:false
+      });
+      comprobanteListo(r, senia);
+    }catch(e){
+      alert('No se pudo subir. Revisá tu conexión y probá de nuevo.');
+      volver();
+    }
+  }
+
+  function comprobanteListo(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const cab=CABANAS.find(c=>c.nombre===r.cabana);
+    const saldo=Math.max(0,(r.total||0)-senia);
+    const msg=`COMPROBANTE ENVIADO\n\nHola! Ya subi el comprobante de la seña.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nSeña: ${formatPrecio(senia)}\nResto a pagar al llegar: ${formatPrecio(saldo)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
+    const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ ¡Listo! Reserva confirmada</h3>
+      <div class="nota" style="font-size:0.95rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}<br>Resto a pagar al llegar: <strong>${formatPrecio(saldo)}</strong></div>
+      <div class="seña-box"><div style="font-weight:700">Abriendo WhatsApp... tocá <u>Enviar</u> para avisarnos</div></div>
+      <a class="btn-ok" href="${waUrl}" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
+      <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box;background:#2c241b">Ver la info de tu estadía</a>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    setTimeout(()=>{ window.location.href=waUrl; }, 1200);
+  }
+
+  // Admin: ver el comprobante que subió el cliente
+  async function verComprobante(id){
+    let a=null;
+    try{ const d=await comprobantesRef.doc(id).get(); if(d.exists) a=d.data(); }catch(e){}
+    if(!a){ const r=reservas.find(x=>x.id===id); a=r&&r.comprobante_archivo; }
+    if(!a||!a.data){ alert('No encontré el comprobante.'); return; }
+    if(a.tipo==='pdf'){
+      try{
+        const b=atob(a.data.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+        const url=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));
+        const l=document.createElement('a'); l.href=url; l.download=(a.nombre||'comprobante.pdf'); l.target='_blank'; document.body.appendChild(l); l.click(); l.remove();
+      }catch(e){ alert('No se pudo abrir el PDF.'); }
+      return;
+    }
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>Comprobante</h3>
+      <img src="${a.data}" style="width:100%;border-radius:8px;border:1px solid #ddd">
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  function marcarPagoOk(id){
+    reservasRef.doc(id).update({ pago_verificado:true })
+      .then(()=>mostrarToast('Pago verificado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+  function pagoOkDesdeLink(id){
+    if(!pedirAdmin()) return;
+    marcarPagoOk(id);
+    const r=reservas.find(x=>x.id===id);
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✔ Pago verificado</h3>
+      <div class="nota">Último paso: el mensaje con las fechas te llega a tu WhatsApp para reenviárselo a la casera.</div>
+      <button class="btn-ok" style="background:#2c241b" onclick="mandarCasera('${id}', ${r?(r.senia||0):0})">🏠 Mensaje para la casera</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+  }
+
   function eliminarReserva(id){
     const r=reservas.find(x=>x.id===id);
-    const pendiente=!!(r&&r.estado==='pendiente');
+    const pendiente=!!(r&&(r.estado==='pendiente'||r.pago_verificado===false));
     const texto=pendiente?"Eliminar esta reserva pendiente? Las fechas van a quedar libres en el calendario.":"Eliminar esta reserva?";
     if(!confirm(texto)) return;
     reservasRef.doc(id).delete()
       .then(()=>{
+        if(r&&r.comprobante_subido) comprobantesRef.doc(id).delete().catch(()=>{});
         if(pendiente){
           const cab=CABANAS.find(c=>c.nombre===r.cabana);
           if(cab){
@@ -1127,7 +1281,7 @@
       const choca=superpuestos.has(r.id);
       const pend=r.estado==='pendiente';
       html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':(pend?' class="fila-pendiente"':'')}>
-        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${pend?'<span class="badge-pend">⏳ PENDIENTE'+(r.comprobante_enviado?' 📎':'')+'</span>':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
+        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${pend?'<span class="badge-pend">⏳ PENDIENTE'+(r.comprobante_enviado?' 📎':'')+'</span>':''}${(!pend&&r.pago_verificado===false)?'<span class="badge-pend">🔎 REVISAR PAGO</span>':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
         <td data-label="Total">${formatPrecio(r.total)}</td>
         <td data-label="Seña">${formatPrecio(r.senia||0)}</td>
         <td data-label="Saldo"><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
@@ -1135,6 +1289,8 @@
         <td data-label="Notas">${r.notas||'-'}</td>
         <td>
           ${pend?`<button class="btn-editar" title="Confirmar pago" onclick="confirmarPendiente('${r.id}')">✅</button>`:''}
+          ${r.comprobante_subido?`<button class="btn-editar" title="Ver comprobante" onclick="verComprobante('${r.id}')">👁</button>`:''}
+          ${(!pend&&r.pago_verificado===false)?`<button class="btn-editar" title="La plata entró: pago verificado" onclick="marcarPagoOk('${r.id}')">✔</button>`:''}
           ${!pend?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
           ${(!pend&&r.tel&&r.estado==='confirmada')?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
           <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
@@ -1351,7 +1507,7 @@
   reservasRef.onSnapshot((snap)=>{
     reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     if (admin) renderRegistro();
-    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); if(CONFIRMAR_ID) mostrarPanelConfirmar(); else if(PAGAR_LINK) mostrarPagarDesdeLink(); else revisarCaseraPend(); }
+    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); if(CONFIRMAR_ID) mostrarPanelConfirmar(); else if(COMPROBANTE_ID) mostrarSubirComprobante(); else if(PAGAR_LINK) mostrarPagarDesdeLink(); else revisarCaseraPend(); }
   }, (err)=>{
     mostrarToast('Sin conexion al registro de reservas');
   });

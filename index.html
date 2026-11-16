@@ -109,6 +109,8 @@
   .modal-caja .nota { font-size:0.78rem; color:#6b6254; margin:0.5rem 0; }
   .modal-caja .btn-ok { display:block; width:100%; background:#2f7d4f; color:#fff; border:none; border-radius:10px; padding:0.8rem; font-size:0.95rem; font-weight:600; cursor:pointer; margin-top:0.6rem; }
   .modal-caja .btn-ok[disabled] { opacity:0.6; cursor:wait; }
+  .modal-caja .aviso-comprobante { background:#fff4d6; border:2px solid #f0a500; border-radius:12px; padding:0.75rem 0.8rem; margin:0.7rem 0; color:#2c241b; font-size:0.9rem; line-height:1.45; }
+  .modal-caja .aviso-comprobante .titulo { font-size:1.05rem; font-weight:700; margin-bottom:0.3rem; }
   .modal-caja .btn-cancelar { display:block; width:100%; background:none; border:none; color:#6b6254; text-decoration:underline; padding:0.5rem; font-size:0.85rem; cursor:pointer; }
   .badge-pend { display:inline-block; background:#fff0c2; color:#8a5a00; border:1px solid #e9c46a; border-radius:6px; padding:0 0.35rem; font-size:0.72rem; font-weight:700; margin-right:0.25rem; }
   .fila-pendiente { background:#fff8e1; }
@@ -703,6 +705,11 @@
         <strong>3)</strong> Tocá el link que quedó en tu mensaje de WhatsApp y <strong>subí el comprobante</strong>. Listo: tu reserva queda confirmada.<br>
         ⏱️ <strong>Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante.</strong> Si no, la reserva se elimina sola y las fechas se liberan.
       </div>
+      <div class="aviso-comprobante">
+        <div class="titulo">📎 El comprobante se sube acá, en la página</div>
+        No lo mandes por WhatsApp: no queda registrado y tu reserva <strong>se borra sola</strong> a los ${MINUTOS_PENDIENTE} minutos.<br>
+        Subiéndolo en la página tu reserva queda <strong>confirmada al instante</strong> ✅ y nadie más puede tomar tus fechas.
+      </div>
       <button class="btn-ok" id="btn-ya-deposite" onclick="confirmarReservaOnline()">Reservar y enviar por WhatsApp</button>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cancelar</button>
     `;
@@ -744,7 +751,7 @@
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nuevaRef=reservasRef.doc();
     const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
-    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
     const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       nuevaRef.set({
@@ -781,6 +788,11 @@
       <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp, junto con el link para subir el comprobante.</div>
       <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#2c241b;font-weight:700">⏱️ Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante. Si no, la reserva se elimina sola y las fechas se liberan.</div>
       <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#c62828;font-weight:700">⚠️ Importante: en WhatsApp tocá <u>Enviar</u> para completar la reserva.</div>
+      <div class="aviso-comprobante">
+        <div class="titulo">📎 El comprobante se sube en la página, no por WhatsApp</div>
+        Cuando pagues, tocá el link del mensaje y subilo ahí. Si lo mandás por WhatsApp, no queda registrado y tu reserva <strong>se borra sola</strong> a los ${MINUTOS_PENDIENTE} minutos.<br>
+        Subiéndolo en la página tu reserva queda <strong>confirmada al instante</strong> ✅ y nadie más puede tomar tus fechas.
+      </div>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
     `;
     enviarComprobante();

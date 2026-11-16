@@ -188,6 +188,35 @@
     return '549' + n;
   }
 
+  // Mensaje de confirmación para el cliente (mismo texto que en el calendario)
+  const CAL_URL = "https://cabanas-caraguata.github.io/mi-calendario/";
+  const INFO_URL = "https://cabanas-caraguata.github.io/mi-calendario/bienvenida.html";
+  const HORA_ENTRADA = "8:00 hs";
+  const HORA_SALIDA = "18:30 hs";
+  function mensajeConfirmacion(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    const nombre=(r.nombre||'').split(' ')[0];
+    const saldo=Math.max(0,(r.total||0)-senia);
+    return `¡Hola${nombre?' '+nombre:''}! Recibimos tu seña y tu reserva quedó *CONFIRMADA*.\n\n`+
+      `*${r.cabana}*\n`+
+      `Entrada: ${f(r.entrada)}, desde las ${HORA_ENTRADA}\n`+
+      `Salida: ${f(r.salida)}, hasta las ${HORA_SALIDA}\n`+
+      `Total: ${formatPrecio(r.total)}\n`+
+      `Seña recibida: ${formatPrecio(senia)}\n`+
+      `*Saldo a abonar al llegar: ${formatPrecio(saldo)}*\n\n`+
+      `Es muy importante que leas con atención toda la información de tu estadía (horarios, cómo llegar, wifi, normas y emergencias):\n${INFO_URL}\n\n`+
+      `El saldo lo podés pagar en efectivo a Yami cuando llegues, o por transferencia. Para transferir, entrá a este link y seguí los pasos:\n${CAL_URL}?pagar=${r.id}\n\n`+
+      `Gracias y disfrutá la estadía.`;
+  }
+  function pagoOk(id){
+    reservasRef.doc(id).update({ pago_verificado:true })
+      .catch(()=> alert('No se pudo guardar. Revisá la conexión.'));
+  }
+  function avisarCliente(id){
+    const r = reservas.find(x=>x.id===id); if(!r || !r.tel) return;
+    window.open('https://api.whatsapp.com/send?phone=' + telWhatsApp(r.tel) + '&text=' + encodeURIComponent(mensajeConfirmacion(r, r.senia||0)), '_blank');
+  }
+
   function avisarPagoTotal(r){
     if(!r.tel) return;
     const _h = new Date();
@@ -255,8 +284,12 @@
 
     const _h = new Date();
     const hoy = _h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
-    const proximas = ordenadas.filter(r => (r.salida||'') >= hoy);
-    const pasadasTodas = ordenadas.filter(r => (r.salida||'') < hoy).reverse();
+    // Las que esperan el okay de Rubén (sin comprobante o con pago sin revisar) van fijas arriba de todo
+    const aRevisar = r => r.estado==='pendiente' || r.pago_verificado===false;
+    const paraRevisar = ordenadas.filter(aRevisar);
+    const resto = ordenadas.filter(r => !aRevisar(r));
+    const proximas = resto.filter(r => (r.salida||'') >= hoy);
+    const pasadasTodas = resto.filter(r => (r.salida||'') < hoy).reverse();
     const faltaCobrar = pasadasTodas.filter(r => saldoDe(r) > 0);
     const pasadas = pasadasTodas.filter(r => saldoDe(r) <= 0);
     const tarjeta = r => {
@@ -266,7 +299,7 @@
       return `
         <div class="tarjeta${choca?' choca':''}">
           <div class="tarjeta-top">
-            <div class="tarjeta-cabana">${choca?'⚠️ ':''}${r.cabana}</div>
+            <div class="tarjeta-cabana">${choca?'⚠️ ':''}${r.estado==='pendiente'?'⏳ ':(r.pago_verificado===false?'🔎 ':'')}${r.cabana}</div>
             <div class="tarjeta-fechas">${fechaCorta(r.entrada)} → ${fechaCorta(r.salida)} · ${r.dias} día${r.dias>1?'s':''}</div>
           </div>
           <div class="tarjeta-grid">
@@ -278,11 +311,14 @@
             <div><div class="etiqueta">Tel</div><div class="valor">${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'')}" target="_blank">${r.tel}</a>`:'-'}</div></div>
             <div><div class="etiqueta">Notas</div><div class="valor">${r.notas||'-'}</div></div>
           </div>
+          ${(r.estado!=='pendiente' && r.pago_verificado===false) ? `<button class="btn-pago btn-editar" style="margin-bottom:0.5rem" onclick="pagoOk('${r.id}')">✔ La plata entró</button>` : ''}
           ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
+          ${(r.estado==='pendiente' || !r.tel) ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="avisarCliente('${r.id}')">💬 Avisar al cliente</button>`}
           ${r.estado==='pendiente' ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="enviarACasera('${r.id}')">🏠 Mensaje para Yami</button>`}
         </div>`;
     };
     lista.innerHTML =
+      (paraRevisar.length ? '<div class="separador separador-alerta">⏳ Para revisar</div>' + paraRevisar.map(tarjeta).join('') : '') +
       (faltaCobrar.length ? '<div class="separador separador-alerta">⚠️ Falta cobrar</div>' + faltaCobrar.map(tarjeta).join('') : '') +
       '<div class="separador">Hoy y próximas</div>' +
       (proximas.length ? proximas.map(tarjeta).join('') : '<div class="vacio">No hay reservas para hoy ni próximas</div>') +

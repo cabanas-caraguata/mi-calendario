@@ -1315,7 +1315,7 @@
           ${r.comprobante_subido?`<button class="btn-editar" title="Ver comprobante" onclick="verComprobante('${r.id}')">👁</button>`:''}
           ${(!pend&&r.pago_verificado===false)?`<button class="btn-editar" title="La plata entró: pago verificado" onclick="marcarPagoOk('${r.id}')">✔</button>`:''}
           ${!pend?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
-          ${(!pend&&r.tel&&r.estado==='confirmada')?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
+          ${(!pend&&r.tel)?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
           <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
           <button class="btn-eliminar" onclick="eliminarReserva('${r.id}')">X</button>
         </td>

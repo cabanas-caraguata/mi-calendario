@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cabañas Caraguatá – Disponibilidad</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap');
+  :root { --fondo:#f5f0e8; --texto:#2a2218; --agua:#a8c5c0; --libre:#d4ead7; --ocupado:#e03030; --hoy:#a8c5c0; --sel:#f0c040; --rango:#f7e49a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',sans-serif; background:var(--fondo); color:var(--texto); min-height:100vh; }
+  header { background:var(--texto); color:#f0ece4; padding:2rem 1.5rem 1.5rem; text-align:center; }
+  header h1 { font-family:'Playfair Display',serif; font-size:2rem; margin-bottom:0.3rem; }
+  header p { font-size:0.85rem; color:var(--agua); letter-spacing:0.08em; text-transform:uppercase; }
+  .leyenda { display:flex; gap:1rem; justify-content:center; padding:0.8rem; font-size:0.75rem; flex-wrap:wrap; background:white; border-bottom:1px solid #e0d8cc; }
+  .leyenda-item { display:flex; align-items:center; gap:0.4rem; }
+  .leyenda-casa { gap:0.6rem; padding:0.5rem 0.4rem; font-size:0.7rem; background:#fdfdfd; border-bottom:1px solid #f0ece4; }
+  .dot { width:14px; height:14px; border-radius:3px; }
+  .cabanas-grid { display:grid; grid-template-columns:1fr; }
+  @media (min-width:700px) { .cabanas-grid { grid-template-columns:1fr 1fr; } }
+  .cabana-card { border:1px solid #e0d8cc; background:white; margin:0.8rem; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+  .cabana-header { padding:0.8rem 1rem; display:flex; align-items:center; gap:0.7rem; border-bottom:1px solid #f0ece4; }
+  .cabana-dot { width:18px; height:18px; border-radius:50%; flex-shrink:0; }
+  .cabana-header h3 { font-family:'Playfair Display',serif; font-size:1.1rem; flex:1; }
+  .cabana-cap { font-size:0.8rem; font-weight:600; color:#5a5044; background:#f5f0e8; border:1px solid #e0d8cc; border-radius:12px; padding:0.15rem 0.6rem; white-space:nowrap; }
+  .cabana-precio { font-size:1rem; font-weight:700; color:var(--texto); white-space:nowrap; }
+  .nav-cabana { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.8rem; background:#fdfdfd; border-bottom:1px solid #f0ece4; }
+  .nav-cabana button { background:none; border:1.5px solid var(--texto); border-radius:50%; width:30px; height:30px; font-size:0.9rem; cursor:pointer; color:var(--texto); display:flex; align-items:center; justify-content:center; }
+  .nav-cabana h2 { font-family:'Playfair Display',serif; font-size:0.95rem; text-transform:capitalize; }
+  .instruccion { text-align:center; font-size:0.75rem; color:#888; padding:0.4rem; }
+  .dias-semana { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:0.65rem; font-weight:500; text-transform:uppercase; padding:0.3rem 0.5rem 0.2rem; color:#888; }
+  .calendario-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 0.5rem 0.8rem; }
+  .dia { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:0.78rem; border-radius:6px; cursor:pointer; user-select:none; transition:transform 0.1s; }
+  .dia:hover:not(.vacio):not(.pasado) { transform:scale(1.1); }
+  .dia.vacio { cursor:default; }
+  .dia.pasado { opacity:0.3; cursor:default; }
+  .dia.libre { background:var(--libre); color:#2d6e3a; }
+  .dia.ocupado { background:var(--ocupado); color:white; }
+  .dia.seleccionado { background:var(--sel); color:#5a4000; font-weight:700; }
+  .dia.rango { background:var(--rango); color:#5a4000; }
+  .resumen-card { margin:0 0.8rem 0.5rem; background:#f9f6f0; border:1px solid #e0d8cc; border-radius:10px; padding:0.8rem 1rem; font-size:0.85rem; }
+  .resumen-card .linea { display:flex; justify-content:space-between; margin-bottom:0.3rem; gap:0.5rem; flex-wrap:wrap; }
+  .resumen-card .total { font-weight:700; font-size:1rem; border-top:1px solid #e0d8cc; margin-top:0.5rem; padding-top:0.5rem; }
+  .resumen-card .reset { background:none; border:none; color:#888; font-size:0.75rem; cursor:pointer; margin-top:0.4rem; text-decoration:underline; display:block; }
+  .form-reserva { margin:0 0.8rem 0.5rem; background:#f0ece4; border:1px solid #e0d8cc; border-radius:10px; padding:0.8rem; display:none; }
+  .form-reserva h4 { font-size:0.85rem; font-weight:600; margin-bottom:0.6rem; }
+  .form-reserva input, .form-reserva textarea { width:100%; border:1px solid #ccc; border-radius:6px; padding:0.4rem 0.6rem; font-size:0.82rem; margin-bottom:0.5rem; font-family:'Inter',sans-serif; }
+  .form-reserva textarea { height:60px; resize:none; }
+  .form-reserva .fila { display:flex; gap:0.5rem; }
+  .form-reserva .fila input { flex:1; }
+  .btn-cabana { display:block; margin:0 0.8rem 0.8rem; color:white; border:none; border-radius:8px; padding:0.6rem 1rem; font-size:0.82rem; font-weight:500; cursor:pointer; text-align:center; text-decoration:none; }
+  .btn-guardar-reserva { display:block; margin:0 0.8rem 0.5rem; background:#2a2218; color:white; border:none; border-radius:8px; padding:0.5rem 1rem; font-size:0.8rem; font-weight:500; cursor:pointer; text-align:center; width:calc(100% - 1.6rem); }
+  .btn-marcar-ocupado { display:block; margin:0 0.8rem 0.5rem; background:#e03030; color:white; border:none; border-radius:8px; padding:0.5rem 1rem; font-size:0.8rem; font-weight:500; cursor:pointer; text-align:center; width:calc(100% - 1.6rem); }
+  .admin-zona { text-align:center; padding:0.8rem; }
+  .admin-zona button { background:none; border:1px dashed #bbb; border-radius:6px; padding:0.4rem 1rem; font-size:0.75rem; color:#999; cursor:pointer; }
+  .registro-panel { margin:0.8rem; background:white; border-radius:12px; border:1px solid #e0d8cc; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+  .registro-header { background:var(--texto); color:#f0ece4; padding:0.8rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+  .registro-header h3 { font-family:'Playfair Display',serif; font-size:1rem; }
+  .registro-header button { background:#f0ece4; color:var(--texto); border:none; border-radius:6px; padding:0.3rem 0.8rem; font-size:0.75rem; cursor:pointer; font-weight:600; }
+  .registro-scroll { overflow-x:auto; }
+  .registro-tabla { width:100%; border-collapse:collapse; font-size:0.75rem; min-width:600px; }
+  .registro-tabla th { background:#f5f0e8; padding:0.5rem; text-align:left; border-bottom:1px solid #e0d8cc; font-weight:600; white-space:nowrap; }
+  .registro-tabla td { padding:0.5rem; border-bottom:1px solid #f0ece4; vertical-align:top; }
+  .registro-tabla td:nth-child(2), .registro-tabla td:nth-child(3), .registro-tabla td:nth-child(4) { white-space:nowrap; min-width:3.2rem; }
+  .registro-tabla tr:last-child td { border-bottom:none; }
+
+  @media (max-width: 700px) {
+    .registro-tabla { min-width:0; font-size:0.85rem; }
+    .registro-tabla thead { display:none; }
+    .registro-tabla, .registro-tabla tbody, .registro-tabla tr, .registro-tabla td { display:block; width:100%; }
+    .registro-tabla tr { border:1px solid #e0d8cc; border-radius:10px; margin-bottom:0.7rem; padding:0.5rem 0.8rem; background:#fff; }
+    .registro-tabla tr.fila-superpuesta { background:#fdeceb; }
+    .registro-tabla td { border-bottom:none; padding:0.25rem 0; white-space:normal !important; min-width:0 !important; }
+    .registro-tabla td:before { content: attr(data-label); font-weight:600; color:#8a7f6e; display:inline-block; min-width:6rem; }
+    .registro-tabla td:first-child { font-weight:700; font-size:1rem; color:var(--texto); display:inline-block; margin-right:0.5rem; }
+    .registro-tabla td:first-child:before { content:none; }
+    .registro-tabla td:nth-child(2) { font-weight:700; font-size:1rem; color:var(--texto); display:inline-block; }
+    .registro-tabla td:nth-child(2):before { content:none; }
+  }
+  .registro-vacio { padding:1rem; text-align:center; color:#aaa; font-size:0.85rem; }
+  .fila-superpuesta { background:#fdeceb !important; }
+  .fila-superpuesta td { color:#8b2a1a; font-weight:600; }
+  .aviso-superposicion { background:#e03030; color:#fff; padding:0.7rem 1rem; font-size:0.85rem; font-weight:600; text-align:center; }
+  .badge-saldo { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem; font-weight:600; }
+  .badge-ok { background:#d4ead7; color:#2d6e3a; }
+  .badge-pendiente { background:#f0cdc8; color:#8b2a1a; }
+  .btn-eliminar { background:none; border:none; color:#e03030; cursor:pointer; font-size:0.8rem; font-weight:700; }
+  .btn-editar { background:none; border:none; color:#4a7c59; cursor:pointer; font-size:0.8rem; font-weight:700; margin-right:4px; }
+  .fila-edicion td { background:#fffbe8; }
+  .fila-edicion input { border:1px solid #ccc; border-radius:4px; padding:0.2rem 0.4rem; font-size:0.75rem; width:100%; font-family:'Inter',sans-serif; }
+  .btn-guardar-edicion { background:#2a2218; color:white; border:none; border-radius:4px; padding:0.2rem 0.6rem; font-size:0.75rem; cursor:pointer; margin-right:4px; }
+  .btn-cancelar-edicion { background:none; border:1px solid #bbb; border-radius:4px; padding:0.2rem 0.6rem; font-size:0.75rem; cursor:pointer; }
+  .guardado { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:#2a2218; color:white; padding:0.6rem 1.4rem; border-radius:20px; font-size:0.8rem; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:200; white-space:nowrap; }
+  .guardado.visible { opacity:1; }
+  footer { text-align:center; padding:1.5rem; font-size:0.75rem; color:#aaa; }
+  /* ---- Reserva online con seña ---- */
+  #modal-reserva { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+  #modal-reserva.abierto { display:flex; }
+  .modal-caja { background:#fff; border-radius:14px; max-width:420px; width:100%; max-height:92vh; overflow:auto; padding:1.1rem; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+  .modal-caja h3 { margin:0 0 0.6rem; font-size:1.2rem; }
+  .modal-caja .linea { display:flex; justify-content:space-between; gap:0.6rem; font-size:0.9rem; padding:0.15rem 0; }
+  .modal-caja .seña-box { background:#f6f1e7; border-radius:10px; padding:0.7rem; margin:0.7rem 0; text-align:center; }
+  .modal-caja .seña-monto { font-size:1.6rem; font-weight:700; }
+  .modal-caja .alias-box { border:1px dashed #b9ad98; border-radius:10px; padding:0.6rem; margin:0.6rem 0; }
+  .modal-caja .alias-txt { font-family:monospace; font-size:1.05rem; font-weight:700; word-break:break-all; }
+  .modal-caja .btn-copiar { background:#2c241b; color:#fff; border:none; border-radius:8px; padding:0.45rem 0.8rem; font-size:0.85rem; cursor:pointer; margin-top:0.4rem; }
+  .modal-caja .nota { font-size:0.78rem; color:#6b6254; margin:0.5rem 0; }
+  .modal-caja .btn-ok { display:block; width:100%; background:#2f7d4f; color:#fff; border:none; border-radius:10px; padding:0.8rem; font-size:0.95rem; font-weight:600; cursor:pointer; margin-top:0.6rem; }
+  .modal-caja .btn-ok[disabled] { opacity:0.6; cursor:wait; }
+  .modal-caja .aviso-comprobante { background:#fff4d6; border:2px solid #f0a500; border-radius:12px; padding:0.75rem 0.8rem; margin:0.7rem 0; color:#2c241b; font-size:0.9rem; line-height:1.45; }
+  .modal-caja .aviso-comprobante .titulo { font-size:1.05rem; font-weight:700; margin-bottom:0.3rem; }
+  .modal-caja .btn-cancelar { display:block; width:100%; background:none; border:none; color:#6b6254; text-decoration:underline; padding:0.5rem; font-size:0.85rem; cursor:pointer; }
+  .badge-pend { display:inline-block; background:#fff0c2; color:#8a5a00; border:1px solid #e9c46a; border-radius:6px; padding:0 0.35rem; font-size:0.72rem; font-weight:700; margin-right:0.25rem; }
+  .fila-pendiente { background:#fff8e1; }
+  .zona-pagar { text-align:center; padding:0.4rem 0.8rem 0; }
+  .btn-pagar-resto { background:#2f7d4f; color:#fff; border:none; border-radius:10px; padding:0.75rem 1.2rem; font-size:0.95rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; width:100%; max-width:420px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cabañas Caraguatá</h1>
+  <p>Disponibilidad · Reservá por WhatsApp</p>
+</header>
+<div class="cabanas-grid" id="cabanas-grid"></div>
+<div class="zona-pagar">
+  <button class="btn-pagar-resto" onclick="abrirPagarResto(null)">💳 ¿Ya reservaste? Pagar lo que falta</button>
+</div>
+<div id="registro-contenedor" style="display:none">
+  <div class="registro-panel">
+    <div class="registro-header" style="cursor:pointer" onclick="toggleFormManual()">
+      <h3>+ Cargar reserva manual (sin marcar calendario)</h3>
+      <span id="flecha-manual">▾</span>
+    </div>
+    <div id="form-manual" style="display:none;padding:1rem;background:#fffbe8;border-bottom:1px solid #e0d8cc">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:0.6rem">
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Cabaña</label>
+          <select id="manual-cabana" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px"></select>
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Entrada</label>
+          <input id="manual-entrada" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Salida</label>
+          <input id="manual-salida" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Total ($)</label>
+          <input id="manual-total" type="number" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Seña ($)</label>
+          <input id="manual-senia" type="number" value="0" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Teléfono</label>
+          <input id="manual-tel" type="tel" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="font-size:0.72rem;color:#8a7f6e">Notas</label>
+          <input id="manual-notas" type="text" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+      </div>
+      <button onclick="guardarReservaManual()" style="background:var(--texto);color:#f0ece4;border:none;padding:0.6rem 1.1rem;border-radius:8px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif">Guardar reserva</button>
+      <div style="font-size:0.7rem;color:#8a7f6e;margin-top:0.5rem">Esto solo agrega la reserva al registro. No toca ni marca ninguna fecha en el calendario.</div>
+    </div>
+    <div class="registro-header" style="cursor:pointer" onclick="toggleFeriadosPanel()">
+      <h3>Feriados largos (precio de fin de semana)</h3>
+      <span id="flecha-feriados">▾</span>
+    </div>
+    <div id="panel-feriados" style="display:none;padding:1rem;background:#eef6f1;border-bottom:1px solid #e0d8cc">
+      <div style="font-size:0.78rem;color:#5a5044;margin-bottom:0.7rem">En estas fechas, si la estadia es mas corta que el feriado completo, se cobran los dias que falten hasta completarlo (los sabados y domingos comunes ya funcionan solos, no hay que cargarlos).</div>
+      <div id="lista-feriados" style="margin-bottom:0.8rem"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:0.6rem">
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Primer dia del feriado largo</label>
+          <input id="fer-desde" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:#8a7f6e">Ultimo dia</label>
+          <input id="fer-hasta" type="date" style="width:100%;padding:0.4rem;border:1px solid #ccc;border-radius:6px">
+        </div>
+      </div>
+      <button onclick="agregarFeriado()" style="background:var(--texto);color:#f0ece4;border:none;padding:0.6rem 1.1rem;border-radius:8px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif">Agregar feriado largo</button>
+    </div>
+    <div class="registro-header">
+      <h3>Registro de Reservas</h3>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <a href="registro.html" target="_blank" style="background:var(--texto);color:#f0ece4;border:none;padding:0.5rem 0.9rem;border-radius:8px;font-size:0.8rem;text-decoration:none;font-family:'Inter',sans-serif;display:inline-block">Ver más grande</a>
+        <button onclick="exportarExcel()">Exportar Excel</button>
+      </div>
+    </div>
+    <div class="registro-scroll">
+      <div id="registro-body"></div>
+    </div>
+  </div>
+</div>
+<div class="admin-zona">
+  <button id="btn-admin" onclick="toggleAdmin()">Modo administrador</button>
+</div>
+<div class="guardado" id="toast">Guardado</div>
+<div id="modal-reserva"><div class="modal-caja" id="modal-contenido"></div></div>
+<footer>Toca la fecha de entrada y luego la de salida para calcular el precio</footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const WHATSAPP = "541158467707";
+  const PASS = "1111";
+  const KEY = "caraguata_ocupadas";
+  const INFO_URL = "https://cabanas-caraguata.github.io/mi-calendario/bienvenida.html"; // pagina con la info para el cliente que ya señó
+  const CAL_URL = "https://cabanas-caraguata.github.io/mi-calendario/";
+  const HORA_ENTRADA = "8:00 hs";
+  const HORA_SALIDA = "18:30 hs";
+
+  // ---- Reserva online con seña (activada para todos; para apagarla, cambiar true por false) ----
+  const PAGO = {
+    alias: "Ruben.akfra.mp",      // <-- alias o CVU para que depositen
+    titular: "Ruben Isaac Akselman (Mercado Pago)",  // <-- nombre del titular de la cuenta
+    seniaPct: 0.5                  // porcentaje de la seña (0.5 = 50%)
+  };
+  const MINUTOS_PENDIENTE = 30; // la reserva pendiente (sin confirmar) se libera sola a los 30 minutos
+  const HORA_DORMIR = 22;      // de noche (desde las 22 hasta las 8) no se libera nada
+  const HORA_DESPERTAR = 8;    // si vence de noche, se libera a las 8:30 (8 + 30 minutos)
+  const RESERVA_ONLINE = true;
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASHU5d-e2a1cKunNyY-ivNKHx3cFCwqCQ",
+    authDomain: "cabanas-caraguata.firebaseapp.com",
+    projectId: "cabanas-caraguata",
+    storageBucket: "cabanas-caraguata.firebasestorage.app",
+    messagingSenderId: "1063147857447",
+    appId: "1:1063147857447:web:1275eb03c4360710271002"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const ocupadasRef = db.collection('calendario').doc('ocupadas');
+  const reservasRef = db.collection('calendario').doc('_reservas').collection('items');
+  const feriadosRef = db.collection('calendario').doc('feriados');
+
+  // Precios por temporada
+  // Invierno: hasta 4 sep 2026
+  // Temporada media: 5 sep – 5 dic 2026
+  const TEMPORADAS = [
+    {
+      desde: new Date(2026, 8, 5), // 5 sep 2026
+      hasta: null, // sin fecha de fin, hasta nuevo aviso
+      precios: { verde: 75000, roja: 110000, blanca: 80000, marron: 150000 },
+      label: "temporada media"
+    }
+  ];
+
+  const CABANAS = [
+    { id:"verde",  nombre:"Casa Verde",  color:"#4a7c59", precio:60000,  capacidad:"Hasta 4 personas" },
+    { id:"blanca", nombre:"Casa Blanca", color:"#b0a898", precio:65000,  capacidad:"Hasta 4 personas" },
+    { id:"roja",   nombre:"Casa Roja",   color:"#b5432a", precio:90000,  capacidad:"Hasta 8 personas" },
+    { id:"marron", nombre:"Casa Marron", color:"#7a5c3a", precio:100000, capacidad:"Hasta 8 personas" }
+  ];
+
+  // Descuento de lunes a jueves (por dia). No se aplica si ese dia cae en un feriado largo.
+  const DESCUENTO_SEMANA = { verde:10000, blanca:10000, roja:20000, marron:20000 };
+  // Desde esta fecha (vacaciones de verano) NO hay descuento: lunes a jueves cuesta igual que el finde
+  const SIN_DESCUENTO_DESDE = new Date(2026, 11, 1); // 1 dic 2026
+
+  function esDiaDeFeriado(fecha){
+    const k = clave(fecha);
+    return getFeriados().some(b => k >= b.desde && k <= b.hasta);
+  }
+
+  function getPrecioBase(cabId, fecha) {
+    for (const t of TEMPORADAS) {
+      if (fecha >= t.desde && (t.hasta === null || fecha <= t.hasta)) {
+        return t.precios[cabId];
+      }
+    }
+    return CABANAS.find(c => c.id === cabId).precio;
+  }
+
+  function getPrecio(cabId, fecha) {
+    let p = getPrecioBase(cabId, fecha);
+    const dow = fecha.getDay(); // 1=lunes ... 4=jueves
+    if (dow >= 1 && dow <= 4 && fecha < SIN_DESCUENTO_DESDE && !esDiaDeFeriado(fecha)) p -= (DESCUENTO_SEMANA[cabId] || 0);
+    return p;
+  }
+
+  function getPrecioStr(cabId) {
+    const hoyP = getPrecio(cabId, new Date());
+    return '$' + hoyP.toLocaleString('es-AR') + '/dia';
+  }
+
+  // ---------------------------------------------------------------
+  // FINES DE SEMANA Y FERIADOS LARGOS
+  // Regla: dentro de un "bloque" (un feriado largo, o un sabado+domingo),
+  // se cobra un dia MAS de los que se reservan, hasta el tope del bloque.
+  //   Finde comun (2 dias): 1 dia -> se cobra 2 | 2 dias -> 2
+  //   Feriado de 3 dias:    1 dia -> 2 | 2 dias -> 3 | 3 dias -> 3
+  // Las fechas de los feriados se pueden agregar/quitar desde el modo admin.
+  // Estas son las fechas verificadas (oct-dic 2026); se usan mientras no haya
+  // una lista guardada en la nube.
+  // ---------------------------------------------------------------
+  const FERIADOS_BASE = [
+    { desde:"2026-10-10", hasta:"2026-10-12" },  // Dia del Respeto a la Diversidad Cultural (sab-lun)
+    { desde:"2026-11-07", hasta:"2026-11-09" },  // Feriado nacional visita del Papa (sab-lun)
+    { desde:"2026-11-21", hasta:"2026-11-23" },  // Dia de la Soberania Nacional trasladado (sab-lun)
+    { desde:"2026-12-25", hasta:"2026-12-27" }   // Navidad (vie-dom)
+  ];
+  let feriadosNube = null; // null = todavia no hay lista guardada en la nube
+
+  function getFeriados(){
+    return feriadosNube ? feriadosNube : FERIADOS_BASE;
+  }
+
+  function sumarDias(f, n){ return new Date(f.getFullYear(), f.getMonth(), f.getDate()+n); }
+
+  // Devuelve la lista de fechas (Date) del bloque al que pertenece "f", o null si es un dia normal
+  function bloqueDe(f){
+    const k = clave(f);
+    for(const b of getFeriados()){
+      if(k>=b.desde && k<=b.hasta){
+        const dias=[];
+        let d=new Date(b.desde+'T00:00:00');
+        const fin=new Date(b.hasta+'T00:00:00');
+        while(d<=fin){ dias.push(d); d=sumarDias(d,1); }
+        return { dias, tipo:'feriado' };
+      }
+    }
+    const dow=f.getDay();
+    if(dow===6) return { dias:[new Date(f.getFullYear(),f.getMonth(),f.getDate()), sumarDias(f,1)], tipo:'finde' };
+    if(dow===0) return { dias:[sumarDias(f,-1), new Date(f.getFullYear(),f.getMonth(),f.getDate())], tipo:'finde' };
+    return null;
+  }
+
+  // Recargos:
+  // 1) Sabado y domingo van juntos: si la estadia termina un sabado, se cobra tambien el domingo
+  //    (si esta libre), para que no quede un domingo suelto. Un domingo solo se cobra doble.
+  //    Domingo + lunes es precio normal.
+  // 2) Feriado largo: la estadia completa (contando dias fuera del feriado y el domingo agregado)
+  //    tiene que llegar al largo del feriado; se cobran solo los dias que falten.
+  //    Ej. feriado vie-dom (3 dias): jue+vie = 2 dias -> se cobra 1 mas (3 en total).
+  function calcularRecargo(cabId, entrada, salida) {
+    const r = { monto:0, cantidad:0, finde:{monto:0,cantidad:0}, feriado:{monto:0,cantidad:0,dias:0} };
+    const ocup = (ocupadas && ocupadas[cabId]) || [];
+    const e0 = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
+    let s0 = new Date(salida.getFullYear(), salida.getMonth(), salida.getDate());
+    let totalDias = Math.round((s0 - e0)/86400000) + 1;
+    const elegidos = new Set();
+    let d = new Date(e0);
+    while (d <= s0) { elegidos.add(clave(d)); d = sumarDias(d, 1); }
+
+    // 1) Sabado + domingo
+    if (s0.getDay() === 6) {
+      const dom = sumarDias(s0, 1);
+      if (!ocup.includes(clave(dom))) {
+        const m = getPrecio(cabId, dom);
+        r.monto += m; r.cantidad++; r.finde.monto += m; r.finde.cantidad++;
+        elegidos.add(clave(dom)); totalDias++;
+      }
+    } else if (totalDias === 1 && s0.getDay() === 0) {
+      const sab = sumarDias(s0, -1);
+      if (!ocup.includes(clave(sab)) && !esDiaDeFeriado(s0)) {
+        const m = getPrecio(cabId, sab);
+        r.monto += m; r.cantidad++; r.finde.monto += m; r.finde.cantidad++;
+        totalDias++;
+      }
+    }
+
+    // 2) Feriados largos
+    const vistos = new Set();
+    d = new Date(e0);
+    while (d <= s0) {
+      const bl = bloqueDe(d);
+      if (bl && bl.tipo === 'feriado' && !vistos.has(clave(bl.dias[0]))) {
+        vistos.add(clave(bl.dias[0]));
+        const faltan = bl.dias.length - totalDias;
+        if (faltan > 0) {
+          const libres = bl.dias.filter(x => !elegidos.has(clave(x)) && !ocup.includes(clave(x))).slice(0, faltan);
+          if (libres.length) {
+            const m = libres.reduce((t, x) => t + getPrecio(cabId, x), 0);
+            r.monto += m; r.cantidad++; r.feriado.monto += m; r.feriado.cantidad++;
+            r.feriado.dias = Math.max(r.feriado.dias, bl.dias.length);
+            totalDias += libres.length;
+          }
+        }
+      }
+      d = sumarDias(d, 1);
+    }
+    return r;
+  }
+
+  // Minimo 2 dias. Un solo dia se permite solo dentro de un finde o feriado largo
+  // (ahi el recargo completa los dias libres; si los demas ya estan alquilados, queda ese dia suelto).
+  function unDiaPermitido(cabId, f){
+    return !!bloqueDe(f);
+  }
+
+  function calcularTotalRango(cabId, entrada, salida) {
+    let total = 0;
+    let d = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
+    while (d <= salida) {
+      total += getPrecio(cabId, d);
+      d = sumarDias(d, 1);
+    }
+    return total + calcularRecargo(cabId, entrada, salida).monto;
+  }
+
+  let ocupadas = {verde:[],roja:[],blanca:[],marron:[]};
+  let reservas = [];
+
+  const hoy = new Date();
+  let meses={}, seleccion={};
+  CABANAS.forEach(c=>{ meses[c.id]=new Date(hoy.getFullYear(),hoy.getMonth(),1); seleccion[c.id]={entrada:null,salida:null}; });
+  // El modo admin queda abierto un rato en este celular (se renueva cada vez que entras)
+  const ADMIN_KEY = 'admin_hasta';
+  const HORAS_ADMIN = 2;
+  function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
+  function recordarAdmin(on){ try{ on ? localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)) : localStorage.removeItem(ADMIN_KEY); }catch(e){} }
+  let admin = new URLSearchParams(location.search).get('admin') === PASS || adminGuardado();
+  if(admin) recordarAdmin(true);
+
+  function clave(f){ return f.getFullYear()+'-'+String(f.getMonth()+1).padStart(2,'0')+'-'+String(f.getDate()).padStart(2,'0'); }
+  function formatFecha(f){ return f.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }
+  function formatFechaCorta(f){ return f.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }
+  function formatPrecio(n){ return '$'+n.toLocaleString('es-AR'); }
+  function diasEntre(f1,f2){ return Math.round((f2-f1)/(1000*60*60*24)); }
+
+  function mostrarToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('visible'); setTimeout(()=>t.classList.remove('visible'),2000); }
+
+  function fechaCorta(fechaStr){
+    if(!fechaStr) return "-";
+    const p = fechaStr.split("-");
+    return p[2] + "-" + p[1];
+  }
+
+  function guardarOcupadas(){
+    ocupadasRef.set(ocupadas)
+      .then(()=>mostrarToast('Guardado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function hayOcupadoEnRango(cabId,entrada,salida){ const ocp=ocupadas[cabId]||[]; let d=new Date(entrada); while(d<=salida){if(ocp.includes(clave(d)))return true;d=new Date(d.getTime()+86400000);} return false; }
+
+  function toggleAdmin(){
+    if(!admin){ const p=prompt("Contrasena:"); if(p!==PASS){alert("Incorrecta.");return;} }
+    admin=!admin;
+    recordarAdmin(admin);
+    document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
+    document.getElementById('registro-contenedor').style.display=admin?'block':'none';
+    if(admin){
+      renderRegistro();
+      const sel=document.getElementById('manual-cabana');
+      if(sel && !sel.options.length) CABANAS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
+    }
+    renderizar();
+  }
+
+  function toggleFeriadosPanel(){
+    const f=document.getElementById('panel-feriados');
+    const fl=document.getElementById('flecha-feriados');
+    const abierto = f.style.display==='block';
+    f.style.display = abierto?'none':'block';
+    fl.textContent = abierto?'▾':'▴';
+    if(!abierto) renderFeriadosAdmin();
+  }
+
+  function renderFeriadosAdmin(){
+    const cont=document.getElementById('lista-feriados');
+    if(!cont) return;
+    const hoyK=clave(hoy);
+    const vigentes=[...getFeriados()].filter(b=>b.hasta>=hoyK).sort((a,b)=>a.desde<b.desde?-1:1);
+    if(!vigentes.length){ cont.innerHTML='<div style="font-size:0.8rem;color:#8a7f6e">No hay feriados largos cargados.</div>'; return; }
+    const fmt=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'});
+    cont.innerHTML=vigentes.map(b=>{
+      const n=Math.round((new Date(b.hasta+'T00:00:00')-new Date(b.desde+'T00:00:00'))/86400000)+1;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #d6e5dc;border-radius:8px;padding:0.5rem 0.7rem;margin-bottom:0.4rem;font-size:0.85rem">
+        <span>${fmt(b.desde)} → ${fmt(b.hasta)} · ${n} dias</span>
+        <button class="btn-eliminar" onclick="quitarFeriado('${b.desde}','${b.hasta}')">X</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Al primer cambio se guarda tambien la lista base, para que no se pierda ninguna fecha
+  function listaParaGuardar(){
+    return feriadosNube ? [] : FERIADOS_BASE;
+  }
+
+  function agregarFeriado(){
+    const desde=document.getElementById('fer-desde').value;
+    const hasta=document.getElementById('fer-hasta').value;
+    if(!desde||!hasta){ alert("Completá el primer y el ultimo dia."); return; }
+    if(hasta<desde){ alert("El ultimo dia no puede ser antes que el primero."); return; }
+    const nuevos=[...listaParaGuardar(), {desde,hasta}];
+    feriadosRef.set({ bloques: firebase.firestore.FieldValue.arrayUnion(...nuevos) }, { merge:true })
+      .then(()=>{ mostrarToast('Feriado agregado'); document.getElementById('fer-desde').value=''; document.getElementById('fer-hasta').value=''; })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function quitarFeriado(desde,hasta){
+    if(!confirm("Quitar este feriado largo?")) return;
+    const base=listaParaGuardar();
+    const op = base.length
+      ? feriadosRef.set({ bloques: firebase.firestore.FieldValue.arrayUnion(...base) }, { merge:true })
+      : Promise.resolve();
+    op.then(()=>feriadosRef.update({ bloques: firebase.firestore.FieldValue.arrayRemove({desde,hasta}) }))
+      .then(()=>mostrarToast('Feriado quitado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function toggleFormManual(){
+    const f=document.getElementById('form-manual');
+    const fl=document.getElementById('flecha-manual');
+    const abierto = f.style.display==='block';
+    f.style.display = abierto?'none':'block';
+    fl.textContent = abierto?'▾':'▴';
+  }
+
+  function guardarReservaManual(){
+    const cabId=document.getElementById('manual-cabana').value;
+    const cab=CABANAS.find(c=>c.id===cabId);
+    const entradaStr=document.getElementById('manual-entrada').value;
+    const salidaStr=document.getElementById('manual-salida').value;
+    const total=parseFloat(document.getElementById('manual-total').value)||0;
+    const senia=parseFloat(document.getElementById('manual-senia').value)||0;
+    const tel=document.getElementById('manual-tel').value.trim();
+    const notas=document.getElementById('manual-notas').value.trim();
+    if(!entradaStr || !salidaStr){ alert("Completá entrada y salida."); return; }
+    if(salidaStr<entradaStr){ alert("La salida no puede ser antes que la entrada."); return; }
+    const dias = diasEntre(new Date(entradaStr+'T00:00:00'), new Date(salidaStr+'T00:00:00')) || 1;
+    const yaExiste = reservas.some(r => r.cabana===cab.nombre && entradaStr<=r.salida && r.entrada<=salidaStr);
+    if(yaExiste){
+      if(!confirm("Ya hay una reserva cargada para "+cab.nombre+" en fechas que se pisan con esta. ¿Guardar igual?")) return;
+    }
+    const reserva = {
+      cabana: cab.nombre,
+      entrada: entradaStr, salida: salidaStr,
+      dias, total, tel, senia, saldo: total-senia, notas,
+      fecha_registro: clave(hoy)
+    };
+    reservasRef.add(reserva)
+      .then(()=>{
+        mostrarToast('Reserva agregada al registro');
+        document.getElementById('manual-entrada').value='';
+        document.getElementById('manual-salida').value='';
+        document.getElementById('manual-total').value='';
+        document.getElementById('manual-senia').value='0';
+        document.getElementById('manual-tel').value='';
+        document.getElementById('manual-notas').value='';
+      })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function cambiarMesCabana(id,d){ meses[id]=new Date(meses[id].getFullYear(),meses[id].getMonth()+d,1); renderizarCabana(id); }
+
+  function guardarReservaConDatos(cabId) {
+    const cab = CABANAS.find(c => c.id === cabId);
+    const sel = seleccion[cabId];
+    if (!sel.entrada || !sel.salida) return;
+    const entradaK = clave(sel.entrada), salidaK = clave(sel.salida);
+    const yaExiste = reservas.some(r => r.cabana === cab.nombre && entradaK <= r.salida && r.entrada <= salidaK);
+    if (yaExiste) {
+      if (!confirm("Ya hay una reserva cargada para " + cab.nombre + " en fechas que se pisan con esta. ¿Guardar igual?")) return;
+    }
+    const dias = diasEntre(sel.entrada, sel.salida) + 1;
+    const total = calcularTotalRango(cabId, sel.entrada, sel.salida);
+    const tel = document.getElementById('tel-' + cabId)?.value.trim() || '';
+    const senia = parseFloat(document.getElementById('senia-' + cabId)?.value) || 0;
+    const notas = document.getElementById('notas-' + cabId)?.value.trim() || '';
+    const saldo = total - senia;
+    const reserva = {
+      cabana: cab.nombre,
+      entrada: clave(sel.entrada), salida: clave(sel.salida),
+      dias, total, tel, senia, saldo, notas,
+      fecha_registro: clave(hoy)
+    };
+    reservasRef.add(reserva)
+      .then(()=>mostrarToast('Reserva guardada en registro'))
+      .catch(()=>mostrarToast('Error al guardar la reserva, revisa tu conexion'));
+
+    // Abrir WhatsApp con resumen de la reserva
+    const entradaStr = sel.entrada.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const salidaStr = sel.salida.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const nombreCorto = cab.nombre.replace('Casa ','');
+    let msg = `${nombreCorto} ${entradaStr} al ${salidaStr}`;
+    if(tel) msg += `\nTel: ${telInternacional(tel)}`;
+    if(notas) msg += `\nNotas: ${notas}`;
+    msg += `\nSeña: ${formatPrecio(senia)}\nResto a pagar: ${formatPrecio(saldo)}`;
+    const waUrl = `https://api.whatsapp.com/send?phone=541158467707&text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+  }
+
+
+  // Devuelve el celular en formato internacional (+54 9 ...) para que WhatsApp lo muestre como link tocable
+  function telInternacional(t){
+    let d=String(t||'').replace(/\D/g,'');
+    if(!d) return String(t||'');
+    d=d.replace(/^00/,'');
+    if(d.startsWith('54')) d=d.slice(2);
+    if(d.startsWith('9') && d.length===11) d=d.slice(1);
+    if(d.startsWith('0')) d=d.slice(1);
+    if(d.length===12 && d.slice(2,4)==='15') d=d.slice(0,2)+d.slice(4);
+    if(d.length===10) return '+54 9 '+d.slice(0,2)+' '+d.slice(2,6)+'-'+d.slice(6);
+    return '+'+(String(t).replace(/\D/g,'').startsWith('54')?'':'54 ')+d;
+  }
+
+  function marcarOcupado(cabId) {
+    const sel = seleccion[cabId];
+    if (!sel.entrada || !sel.salida) return;
+
+    // Primero marcar los días
+    const nuevasFechas = [];
+    let d = new Date(sel.entrada);
+    while (d <= sel.salida) {
+      const k = clave(d);
+      if (!(ocupadas[cabId] || []).includes(k)) {
+        ocupadas[cabId] = ocupadas[cabId] || [];
+        ocupadas[cabId].push(k);
+        nuevasFechas.push(k);
+      }
+      d = new Date(d.getTime() + 86400000);
+    }
+    if (nuevasFechas.length) {
+      ocupadasRef.update({ [cabId]: firebase.firestore.FieldValue.arrayUnion(...nuevasFechas) })
+        .then(()=>mostrarToast('Guardado'))
+        .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+    }
+
+    // Mostrar formulario para datos antes de cerrar
+    const formRes = document.getElementById('form-' + cabId);
+    const btnMarcar = document.getElementById('btn-marcar-' + cabId);
+    const btnGuardar = document.getElementById('guardar-' + cabId);
+    if (formRes) formRes.style.display = 'block';
+    if (btnMarcar) btnMarcar.style.display = 'none';
+    if (btnGuardar) {
+      btnGuardar.style.display = 'block';
+      btnGuardar.textContent = 'Guardar en registro y cerrar';
+      btnGuardar.onclick = () => {
+        guardarReservaConDatos(cabId);
+        resetSeleccion(cabId);
+      };
+    }
+
+    // Actualizar calendario (días ya marcados en rojo)
+    renderizarCabana(cabId);
+  }
+
+  // ---------------------------------------------------------------
+  // RESERVA ONLINE CON SEÑA
+  // 1) El cliente toca "Reservar ahora": ve el monto de la seña y a donde depositar (no se guarda nada).
+  // 2) Al tocar "Ya deposite, enviar comprobante": se guarda la reserva como PENDIENTE,
+  //    se tachan las fechas en el calendario y se abre WhatsApp con el mensaje armado.
+  // 3) El admin confirma (tilde) o elimina la reserva pendiente desde el registro.
+  //    Al eliminar una pendiente, las fechas vuelven a quedar libres.
+  // ---------------------------------------------------------------
+  let reservaEnCurso = null;
+
+  function fechasEntreStr(desde, hasta){
+    const out=[];
+    let d=new Date(desde+'T00:00:00');
+    const fin=new Date(hasta+'T00:00:00');
+    while(d<=fin){ out.push(clave(d)); d=sumarDias(d,1); }
+    return out;
+  }
+
+  function nombreParaMensaje(cabId){
+    return cabId==='verde'?'Casa Ver de':cabId==='roja'?'Casa Ro ja':cabId==='blanca'?'Casa Blan ca':'Casa Ma rron';
+  }
+
+  function abrirReserva(cabId){
+    const cab=CABANAS.find(c=>c.id===cabId), sel=seleccion[cabId];
+    if(!sel||!sel.entrada||!sel.salida) return;
+    const fechas=fechasEntreStr(clave(sel.entrada),clave(sel.salida));
+    const ocup=ocupadas[cabId]||[];
+    if(fechas.some(k=>ocup.includes(k))){
+      alert('Alguna de esas fechas ya no esta disponible. Elegi otras fechas, por favor.');
+      return;
+    }
+    const dias=fechas.length;
+    const total=calcularTotalRango(cabId,sel.entrada,sel.salida);
+    const senia=Math.round(total*PAGO.seniaPct/1000)*1000;
+    reservaEnCurso={cabId,dias,total,senia,entrada:clave(sel.entrada),salida:clave(sel.salida)};
+    const pct=Math.round(PAGO.seniaPct*100);
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>Reservar ${cab.nombre}</h3>
+      <div class="linea"><span>Entrada:</span><span>${formatFechaCorta(sel.entrada)} (${HORA_ENTRADA})</span></div>
+      <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
+      <div class="linea"><span>Dias:</span><span>${dias}</span></div>
+      <div class="linea"><strong>Total estimado:</strong><strong>${formatPrecio(total)}</strong></div>
+      <form autocomplete="on" onsubmit="return false" style="margin:0.6rem 0 0.2rem">
+        <input id="rsv-nombre" name="name" type="text" autocomplete="name" placeholder="Tu nombre y apellido" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem;margin-bottom:0.4rem">
+        <input id="rsv-tel" name="tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
+      </form>
+      <div class="seña-box">
+        <div>Seña para reservar (${pct}%)</div>
+        <div class="seña-monto">${formatPrecio(senia)}</div>
+      </div>
+      <div class="alias-box">
+        <div style="font-size:0.8rem;color:#6b6254">Alias para depositar la seña:</div>
+        <div class="alias-txt" id="alias-txt">${PAGO.alias}</div>
+        <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
+        <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
+      </div>
+      <div class="nota" style="font-size:0.82rem;color:#2c241b;line-height:1.45;background:#f5f0e8;border-radius:8px;padding:0.6rem 0.7rem;margin:0.5rem 0">
+        📌 La seña reserva la casa solo para vos (dejamos de ofrecerla a otros), por eso no se devuelve si cancelás. El resto lo pagás al llegar.<br>
+        🔒 Nuestro <strong>único</strong> número para reservas es el 11 5846-7707, el mismo de todos nuestros reels.<br>
+        🎥 ¿Querés ver el lugar antes? Hacé una videollamada con <strong>Yami</strong>, nuestra casera, que vive en la isla: 11 3365-2352.
+      </div>
+      <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">
+        <strong>1)</strong> Tocá el botón verde: tus fechas quedan reservadas y se abre WhatsApp con tu reserva y el alias. <strong>Enviá ese mensaje.</strong><br>
+        <strong>2)</strong> Depositá la seña.<br>
+        <strong>3)</strong> Tocá el link que quedó en tu mensaje de WhatsApp y <strong>subí el comprobante</strong>. Listo: tu reserva queda confirmada.<br>
+        ⏱️ <strong>Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante.</strong> Si no, la reserva se elimina sola y las fechas se liberan.
+      </div>
+      <div class="aviso-comprobante">
+        <div class="titulo">📎 El comprobante se sube acá, en la página</div>
+        No lo mandes por WhatsApp: no queda registrado y tu reserva <strong>se borra sola</strong> a los ${MINUTOS_PENDIENTE} minutos.<br>
+        Subiéndolo en la página tu reserva queda <strong>confirmada al instante</strong> ✅ y nadie más puede tomar tus fechas.
+      </div>
+      <button class="btn-ok" id="btn-ya-deposite" onclick="confirmarReservaOnline()">Reservar y enviar por WhatsApp</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cancelar</button>
+    `;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  function cerrarReserva(){
+    document.getElementById('modal-reserva').classList.remove('abierto');
+    reservaEnCurso=null;
+  }
+
+  function copiarAlias(){
+    const t=PAGO.alias;
+    const ok=()=>mostrarToast('Copiado');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(ok).catch(()=>{});
+    } else {
+      const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); ok(); }catch(e){}
+      document.body.removeChild(ta);
+    }
+  }
+
+  async function confirmarReservaOnline(){
+    const r=reservaEnCurso; if(!r) return;
+    const cab=CABANAS.find(c=>c.id===r.cabId);
+    const btn=document.getElementById('btn-ya-deposite');
+    const fechas=fechasEntreStr(r.entrada,r.salida);
+    if(fechas.some(k=>(ocupadas[r.cabId]||[]).includes(k))){
+      alert('Alguna de esas fechas se acaba de ocupar. Elegi otras fechas, por favor.');
+      cerrarReserva(); renderizarCabana(r.cabId); return;
+    }
+    const nombre=(document.getElementById('rsv-nombre')?.value||'').replace(/[<>&"']/g,'').trim();
+    const tel=(document.getElementById('rsv-tel')?.value||'').replace(/[^\d+ ()-]/g,'').trim();
+    if(nombre.length<3){ alert('Poné tu nombre, por favor.'); document.getElementById('rsv-nombre')?.focus(); return; }
+    if(tel.replace(/\D/g,'').length<8){ alert('Poné un teléfono válido, por favor.'); document.getElementById('rsv-tel')?.focus(); return; }
+    if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+    const entradaTxt=new Date(r.entrada+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const nuevaRef=reservasRef.doc();
+    const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
+    const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+    const guardar=Promise.all([
+      nuevaRef.set({
+        cabana: cab.nombre, entrada: r.entrada, salida: r.salida, dias: r.dias,
+        total: r.total, tel, nombre, senia:0, saldo:r.total,
+        notas:'Reserva online - '+nombre+' - seña pedida '+formatPrecio(r.senia),
+        estado:'pendiente', senia_pedida:r.senia,
+        fecha_registro: clave(hoy), creado_ms: Date.now()
+      }),
+      ocupadasRef.set({ [r.cabId]: firebase.firestore.FieldValue.arrayUnion(...fechas) }, { merge:true })
+    ]);
+    const espera=new Promise(res=>setTimeout(()=>res('timeout'),6000));
+    reservaCreada={ref:null,url:waUrl,listo:guardar.then(()=>{ reservaCreada.ref=nuevaRef; return nuevaRef; })};
+    reservaCreada.listo.catch(()=>{});
+    try{
+      await Promise.race([guardar,espera]);
+    }catch(e){
+      mostrarToast('Error al guardar, revisa tu conexion');
+      if(btn){ btn.disabled=false; btn.textContent='Reservar y enviar por WhatsApp'; }
+      return;
+    }
+    fechas.forEach(k=>{ if(!(ocupadas[r.cabId]||[]).includes(k)){ ocupadas[r.cabId]=ocupadas[r.cabId]||[]; ocupadas[r.cabId].push(k); } });
+    resetSeleccion(r.cabId);
+    renderizarCabana(r.cabId);
+    reservaEnCurso=null;
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ Fechas reservadas</h3>
+      <div class="nota" style="font-size:0.95rem;color:#2c241b">Tus fechas quedaron reservadas a nombre de <strong>${nombre}</strong>: ${formatFechaCorta(new Date(r.entrada+'T00:00:00'))} al ${formatFechaCorta(new Date(r.salida+'T00:00:00'))}.</div>
+      <div class="seña-box">
+        <div>Abriendo WhatsApp...</div>
+        <div style="font-size:1.05rem;font-weight:700;margin-top:0.3rem">Enviá el mensaje con tu reserva. Cuando pagues, tocá el link de ese mensaje para subir el comprobante</div>
+      </div>
+      <a class="btn-ok" href="${waUrl}" onclick="return enviarComprobante(event)" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
+      <div class="nota" style="margin-top:0.6rem">Alias para la seña: <strong>${PAGO.alias}</strong> (${formatPrecio(r.senia)}). También te queda escrito en el mensaje de WhatsApp, junto con el link para subir el comprobante.</div>
+      <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#2c241b;font-weight:700">⏱️ Tenés ${MINUTOS_PENDIENTE} minutos para subir el comprobante. Si no, la reserva se elimina sola y las fechas se liberan.</div>
+      <div class="nota" style="margin-top:0.4rem;font-size:0.95rem;color:#c62828;font-weight:700">⚠️ Importante: en WhatsApp tocá <u>Enviar</u> para completar la reserva.</div>
+      <div class="aviso-comprobante">
+        <div class="titulo">📎 El comprobante se sube en la página, no por WhatsApp</div>
+        Cuando pagues, tocá el link del mensaje y subilo ahí. Si lo mandás por WhatsApp, no queda registrado y tu reserva <strong>se borra sola</strong> a los ${MINUTOS_PENDIENTE} minutos.<br>
+        Subiéndolo en la página tu reserva queda <strong>confirmada al instante</strong> ✅ y nadie más puede tomar tus fechas.
+      </div>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
+    `;
+    enviarComprobante();
+  }
+
+  let reservaCreada=null;
+  async function enviarComprobante(ev){
+    if(ev) ev.preventDefault();
+    const rc=reservaCreada; if(!rc) return false;
+    try{
+      const ref=rc.ref||await Promise.race([rc.listo,new Promise(res=>setTimeout(()=>res(null),3000))]);
+      if(ref) await Promise.race([ref.update({comprobante_enviado:true,comprobante_ms:Date.now()}),new Promise(res=>setTimeout(res,2500))]);
+    }catch(e){}
+    window.location.href=rc.url;
+    return false;
+  }
+
+  const limpiando=new Set();
+  // Hora en que vence una reserva pendiente (hora de Argentina, UTC-3).
+  function venceMs(creado){
+    const H=3600000, AR=-3*H;
+    let v=creado+MINUTOS_PENDIENTE*60000;
+    const local=new Date(v+AR), hora=local.getUTCHours();
+    if(hora>=HORA_DORMIR || hora<HORA_DESPERTAR){
+      const d=new Date(Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate()));
+      if(hora>=HORA_DORMIR) d.setUTCDate(d.getUTCDate()+1);
+      v=d.getTime()+HORA_DESPERTAR*H+MINUTOS_PENDIENTE*60000-AR;
+    }
+    return v;
+  }
+  async function limpiarPendientesVencidas(){
+    const ahora=Date.now();
+    const vencidas=reservas.filter(r=>r.estado==='pendiente' && r.creado_ms && ahora>venceMs(r.creado_ms) && !limpiando.has(r.id));
+    for(const v of vencidas){
+      limpiando.add(v.id);
+      try{
+        // se vuelve a consultar al servidor para no borrar nada por datos viejos en cache
+        const d=await reservasRef.doc(v.id).get({source:'server'});
+        if(!d.exists) continue;
+        const r=d.data();
+        if(r.estado!=='pendiente' || !r.creado_ms || Date.now()<=venceMs(r.creado_ms)) continue;
+        const cab=CABANAS.find(c=>c.nombre===r.cabana); if(!cab) continue;
+        let fechas=fechasEntreStr(r.entrada,r.salida);
+        // no liberar dias que cubra otra reserva de la misma cabaña
+        const otras=reservas.filter(x=>x.id!==v.id && x.cabana===r.cabana);
+        fechas=fechas.filter(k=>!otras.some(x=>x.entrada<=k && k<=x.salida));
+        await reservasRef.doc(v.id).delete();
+        if(fechas.length) await ocupadasRef.set({ [cab.id]: firebase.firestore.FieldValue.arrayRemove(...fechas) },{ merge:true });
+      }catch(e){}
+      finally{ limpiando.delete(v.id); }
+    }
+  }
+  // Las reservas pendientes se liberan solas a los 30 minutos (de noche, a las 8:30). Se revisa cada minuto.
+  setInterval(limpiarPendientesVencidas, 60000);
+
+  function confirmarPendiente(id){
+    const r=reservas.find(x=>x.id===id); if(!r) return;
+    const sug=r.senia_pedida||0;
+    const v=prompt('Seña recibida (en pesos):', sug);
+    if(v===null) return;
+    const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+    const senia=isNaN(n)?0:n;
+    reservasRef.doc(id).update({ estado:'confirmada', senia, saldo:r.total-senia })
+      .then(()=>mostrarToast('Reserva confirmada'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+    panelPostConfirmacion(id, senia, r.tel?1:2);
+  }
+
+  // Despues de confirmar: primero el mensaje al cliente, al volver a la pagina el de la casera.
+  // Se recuerda en el celular, asi si la pagina se recarga el boton de la casera vuelve a aparecer.
+  function guardarCaseraPend(v){ try{ v?localStorage.setItem('casera_pend',JSON.stringify(v)):localStorage.removeItem('casera_pend'); }catch(e){} }
+  function leerCaseraPend(){ try{ return JSON.parse(localStorage.getItem('casera_pend')||'null'); }catch(e){ return null; } }
+  function panelPostConfirmacion(id, senia, paso){
+    const r=reservas.find(x=>x.id===id); if(!r) return;
+    guardarCaseraPend({id, senia});
+    const boton = paso===1
+      ? `<button class="btn-ok" onclick="avisarCliente('${id}', ${senia})">💬 Avisar al cliente</button>
+         <div class="nota" style="margin-top:0.5rem">Después volvé a esta página para mandar el mensaje de la casera.</div>`
+      : `<div class="nota" style="margin-bottom:0.5rem">Último paso: el mensaje con las fechas te llega a tu WhatsApp para reenviárselo a la casera.</div>
+         <button class="btn-ok" style="background:#2c241b" onclick="mandarCasera('${id}', ${senia})">🏠 Mensaje para la casera</button>`;
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ Reserva confirmada</h3>
+      <div class="nota">${r.cabana} · ${r.nombre||''} · Seña ${formatPrecio(senia)}</div>
+      ${boton}
+      <button class="btn-cancelar" onclick="guardarCaseraPend(null);cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function avisarCliente(id, senia){ enviarConfirmacion(id, senia); panelPostConfirmacion(id, senia, 2); }
+  function mandarCasera(id, senia){ guardarCaseraPend(null); enviarACasera(id, senia); cerrarReserva(); }
+  // Si quedo pendiente el mensaje de la casera (por ejemplo, la pagina se recargo), se vuelve a mostrar
+  let caseraRevisada=false;
+  function revisarCaseraPend(){
+    if(caseraRevisada) return; caseraRevisada=true;
+    const c=leerCaseraPend(); if(!c) return;
+    const r=reservas.find(x=>x.id===c.id);
+    if(!r || r.estado!=='confirmada'){ guardarCaseraPend(null); return; }
+    panelPostConfirmacion(c.id, c.senia, 2);
+  }
+
+  // ---- Link "?confirmar=ID" que llega en el mensaje de WhatsApp de la reserva online ----
+  const CONFIRMAR_ID = new URLSearchParams(location.search).get('confirmar');
+  let panelConfirmarMostrado=false;
+  function mostrarPanelConfirmar(){
+    if(!CONFIRMAR_ID || panelConfirmarMostrado) return;
+    panelConfirmarMostrado=true;
+    const r=reservas.find(x=>x.id===CONFIRMAR_ID);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    let html;
+    if(!r){
+      html=`<h3>Reserva no encontrada</h3><div class="nota">Puede que se haya eliminado o liberado. Revisá el registro en modo administrador.</div>`;
+    } else {
+      const datos=`<div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+        <div class="linea"><span>Nombre:</span><span>${r.nombre||'-'}</span></div>
+        <div class="linea"><span>Tel:</span><span>${r.tel||'-'}</span></div>
+        <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
+        <div class="linea"><span>Total:</span><span>${formatPrecio(r.total||0)}</span></div>`;
+      if(r.estado==='pendiente'){
+        html=`<h3>⏳ Reserva pendiente</h3>${datos}
+          <div class="linea"><span>Seña pedida:</span><span>${formatPrecio(r.senia_pedida||0)}</span></div>
+          <button class="btn-ok" onclick="confirmarDesdeLink()">✅ Pago recibido, confirmar</button>
+          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 No pagó, eliminar y liberar fechas</button>`;
+      } else {
+        const revisar=r.pago_verificado===false;
+        html=`<h3>${revisar?'📎 Comprobante subido':'✅ Esta reserva ya está confirmada'}</h3>${datos}
+          <div class="linea"><span>Seña:</span><span>${formatPrecio(r.senia||0)}</span></div>
+          ${revisar?`<div class="nota" style="color:#8a5a00;font-weight:700">🔎 Revisá en Mercado Pago que haya entrado la plata.</div>`:''}
+          ${r.comprobante_subido?`<button class="btn-ok" style="background:#5a6b7a" onclick="verComprobante('${r.id}')">👁 Ver comprobante</button>`:''}
+          ${revisar?`<button class="btn-ok" onclick="pagoOkDesdeLink('${r.id}')">✔ La plata entró</button>`:''}
+          ${r.tel?`<button class="btn-ok" onclick="enviarConfirmacion('${r.id}')">💬 Avisar al cliente</button>`:''}
+          <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="mandarCasera('${r.id}', ${r.senia||0})">🏠 Mensaje para la casera</button>
+          <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 ${revisar?'Comprobante trucho: eliminar y liberar fechas':'Eliminar reserva'}</button>
+          ${revisar?'':`<div class="nota" style="margin-top:0.4rem">Al eliminar una reserva ya confirmada, las fechas siguen marcadas: si querés liberarlas, destildalas en el calendario.</div>`}`;
+      }
+    }
+    document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function pedirAdmin(){
+    if(admin) return true;
+    const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return false; }
+    admin=true; recordarAdmin(true);
+    document.getElementById('btn-admin').textContent="Salir del modo admin";
+    document.getElementById('registro-contenedor').style.display='block';
+    renderRegistro();
+    return true;
+  }
+  function eliminarDesdeLink(){
+    if(!pedirAdmin()) return;
+    cerrarReserva();
+    eliminarReserva(CONFIRMAR_ID);
+  }
+  function confirmarDesdeLink(){
+    if(!admin){
+      const p=prompt("Contrasena:"); if(p!==PASS){ alert("Incorrecta."); return; }
+      admin=true; recordarAdmin(true);
+      document.getElementById('btn-admin').textContent="Salir del modo admin";
+      document.getElementById('registro-contenedor').style.display='block';
+      renderRegistro();
+    }
+    cerrarReserva();
+    confirmarPendiente(CONFIRMAR_ID);
+  }
+
+  // Mismo formato que el mensaje del modo "marcar ocupado": llega a tu WhatsApp para reenviarlo a la casera
+  function enviarACasera(id, seniaForzada){
+    const r=reservas.find(x=>x.id===id); if(!r) return;
+    const senia=(seniaForzada!==undefined)?seniaForzada:(r.senia||0);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    let msg=`${r.cabana.replace('Casa ','')} ${f(r.entrada)} al ${f(r.salida)}`;
+    if(r.tel) msg+=`\nTel: ${telInternacional(r.tel)}`;
+    msg+=`\nNotas: ${r.nombre||''}`;
+    msg+=`\nSeña: ${formatPrecio(senia)}\nResto a pagar: ${formatPrecio(Math.max(0,(r.total||0)-senia))}`;
+    window.open('https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg),'_blank');
+  }
+
+  // Mensaje que se le manda al cliente cuando se confirma la reserva (editable)
+  function mensajeConfirmacion(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    const nombre=(r.nombre||'').split(' ')[0];
+    const saldo=Math.max(0,(r.total||0)-senia);
+    // Sin emojis: en algunos celulares WhatsApp los muestra como "?" cuando llegan por link
+    return `¡Hola${nombre?' '+nombre:''}! Recibimos tu seña y tu reserva quedó *CONFIRMADA*.\n\n`+
+      `*${r.cabana}*\n`+
+      `Entrada: ${f(r.entrada)}, desde las ${HORA_ENTRADA}\n`+
+      `Salida: ${f(r.salida)}, hasta las ${HORA_SALIDA}\n`+
+      `Total: ${formatPrecio(r.total)}\n`+
+      `Seña recibida: ${formatPrecio(senia)}\n`+
+      `*Saldo a abonar al llegar: ${formatPrecio(saldo)}*\n\n`+
+      `Es muy importante que leas con atención toda la información de tu estadía (horarios, cómo llegar, wifi, normas y emergencias):\n${INFO_URL}\n\n`+
+      `El saldo lo podés pagar en efectivo a Yami cuando llegues, o por transferencia. Para transferir, entrá a este link y seguí los pasos:\n${CAL_URL}?pagar=${r.id}\n\n`+
+      `Gracias y disfrutá la estadía.`;
+  }
+
+  // ---------------------------------------------------------------
+  // PAGAR LO QUE FALTA
+  // Boton para el cliente que ya reservo: ve el alias y manda el comprobante por WhatsApp.
+  // Con el link "?pagar=ID" (va en el mensaje de confirmacion) muestra su casa, fechas y saldo.
+  // Con "?pagar" solo (sin ID, desde info.html) muestra el alias y los pasos.
+  // ---------------------------------------------------------------
+  const PARAMS_PAGAR = new URLSearchParams(location.search);
+  const PAGAR_LINK = PARAMS_PAGAR.has('pagar');
+  const PAGAR_ID = PARAMS_PAGAR.get('pagar') || '';
+  let pagarMostrado=false;
+
+  function saldoDe(r){ return Math.max(0,(r.total||0)-(r.senia||0)); }
+
+  function abrirPagarResto(id){
+    const r = id ? reservas.find(x=>x.id===id) : null;
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    let datos='';
+    if(r){
+      datos=`<div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+        ${r.nombre?`<div class="linea"><span>Nombre:</span><span>${r.nombre}</span></div>`:''}
+        <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
+        <div class="seña-box">
+          <div>Lo que falta pagar</div>
+          <div class="seña-monto">${formatPrecio(saldoDe(r))}</div>
+        </div>`;
+    }
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>💳 Pagar lo que falta</h3>
+      ${datos}
+      <div class="alias-box">
+        <div style="font-size:0.8rem;color:#6b6254">Alias para transferir:</div>
+        <div class="alias-txt">${PAGO.alias}</div>
+        <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
+        <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
+      </div>
+      <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">
+        <strong>1)</strong> Copiá el alias y hacé la transferencia.<br>
+        <strong>2)</strong> Tocá el botón verde: se abre WhatsApp con el aviso de pago. <strong>Enviá ese mensaje.</strong><br>
+        <strong>3)</strong> Mandanos el comprobante <strong>en ese mismo chat</strong>. Desde Mercado Pago: "Compartir comprobante" → WhatsApp.
+      </div>
+      <div class="nota">Si preferís, también podés pagar en efectivo a Yami cuando llegues a la casa.</div>
+      <button class="btn-ok" onclick="avisarPagoResto('${r?r.id:''}')">Avisar el pago por WhatsApp</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
+    `;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  function avisarPagoResto(id){
+    const r = id ? reservas.find(x=>x.id===id) : null;
+    let msg='PAGO DEL RESTO\n\nHola! Transferí lo que faltaba de mi reserva.';
+    if(r){
+      const cab=CABANAS.find(c=>c.nombre===r.cabana);
+      const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+      msg+=`\n\n${cab?nombreParaMensaje(cab.id):r.cabana}`;
+      if(r.nombre) msg+=`\nNombre: ${r.nombre}`;
+      msg+=`\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nMonto: ${formatPrecio(saldoDe(r))}`;
+    }
+    msg+='\n\nTe mando el comprobante por este chat.';
+    window.location.href=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+  }
+
+  function mostrarPagarDesdeLink(){
+    if(!PAGAR_LINK || pagarMostrado) return;
+    pagarMostrado=true;
+    abrirPagarResto(PAGAR_ID);
+  }
+
+  function enviarConfirmacion(id, seniaForzada){
+    const r=reservas.find(x=>x.id===id); if(!r||!r.tel) return;
+    const senia=(seniaForzada!==undefined)?seniaForzada:(r.senia||0);
+    const num=r.tel.replace(/\D/g,'').replace(/^(00)?54/,'');
+    window.open('https://api.whatsapp.com/send?phone=54'+num+'&text='+encodeURIComponent(mensajeConfirmacion(r,senia)),'_blank');
+  }
+
+  // ---------------------------------------------------------------
+  // SUBIR COMPROBANTE (link "?comprobante=ID" que va en el mensaje RESERVA ONLINE)
+  // El cliente sube la foto o el PDF: la reserva queda confirmada sola (seña = la pedida)
+  // y marcada "REVISAR PAGO" hasta que Rubén ve que la plata entró. Si es trucho, la elimina
+  // y las fechas se liberan.
+  // ---------------------------------------------------------------
+  const COMPROBANTE_LINK = new URLSearchParams(location.search).has('comprobante');
+  let COMPROBANTE_ID = new URLSearchParams(location.search).get('comprobante') || '';
+  const comprobantesRef = db.collection('calendario').doc('_comprobantes').collection('items');
+  let subirMostrado=false;
+
+  function mostrarSubirComprobante(){
+    if(!COMPROBANTE_LINK || subirMostrado) return;
+    subirMostrado=true;
+    if(!COMPROBANTE_ID){ pedirTelComprobante(); return; }
+    const r=reservas.find(x=>x.id===COMPROBANTE_ID);
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    let html;
+    if(!r){
+      html=`<h3>Reserva no encontrada</h3><div class="nota" style="font-size:0.9rem;color:#2c241b">Puede que se haya vencido (pasaron más de ${MINUTOS_PENDIENTE} minutos sin subir el comprobante). Escribinos por WhatsApp al 11 5846-7707 y lo vemos.</div>`;
+    } else if(r.comprobante_subido){
+      html=`<h3>✅ Ya recibimos tu comprobante</h3>
+        <div class="nota" style="font-size:0.9rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}. Tu reserva está confirmada.</div>
+        <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box">Ver la info de tu estadía</a>`;
+    } else {
+      html=`<h3>📎 Subí tu comprobante</h3>
+        <div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+        ${r.nombre?`<div class="linea"><span>Nombre:</span><span>${r.nombre}</span></div>`:''}
+        <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
+        <div class="seña-box"><div>Seña</div><div class="seña-monto">${formatPrecio(r.senia_pedida||0)}</div></div>
+        <div class="alias-box">
+          <div style="font-size:0.8rem;color:#6b6254">¿Todavía no pagaste? Alias:</div>
+          <div class="alias-txt">${PAGO.alias}</div>
+          <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
+          <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
+        </div>
+        <div class="nota" style="font-size:0.85rem;color:#2c241b">Tocá el botón y elegí la foto o el PDF del comprobante.</div>
+        <input type="file" id="input-comprobante" accept="image/*,application/pdf" style="display:none" onchange="subirComprobante(this)">
+        <button class="btn-ok" id="btn-subir" onclick="document.getElementById('input-comprobante').click()">📎 Subir comprobante</button>`;
+    }
+    document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  // Link sin numero de reserva (el que manda el robot): se busca la reserva por telefono
+  function pedirTelComprobante(){
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>📎 Subí tu comprobante</h3>
+      <div class="nota" style="font-size:0.9rem;color:#2c241b">Poné el teléfono que usaste al reservar.</div>
+      <input id="tel-comp" name="tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
+      <button class="btn-ok" onclick="buscarReservaPorTel()">Buscar mi reserva</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function buscarReservaPorTel(){
+    const fin=(t)=>String(t||'').replace(/\D/g,'').slice(-8);
+    const t=fin(document.getElementById('tel-comp')?.value);
+    if(t.length<8){ alert('Poné el teléfono completo, por favor.'); return; }
+    const lista=reservas.filter(r=>fin(r.tel)===t && (r.estado==='pendiente'||r.comprobante_subido))
+      .sort((a,b)=>(b.creado_ms||0)-(a.creado_ms||0));
+    const r=lista.find(x=>x.estado==='pendiente')||lista[0];
+    if(!r){ alert('No encontramos una reserva pendiente con ese teléfono. Puede que se haya vencido. Escribinos por WhatsApp.'); return; }
+    COMPROBANTE_ID=r.id; subirMostrado=false; mostrarSubirComprobante();
+  }
+
+  function leerArchivo(file){
+    return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
+  }
+  // Achica la foto para que entre en la base de datos (max 1400 px, jpg)
+  function achicarImagen(dataUrl){
+    return new Promise((res)=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1400, k=Math.min(1, max/Math.max(img.width,img.height));
+        const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+        const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+        let q=0.75, out=c.toDataURL('image/jpeg',q);
+        while(out.length>700000 && q>0.3){ q-=0.15; out=c.toDataURL('image/jpeg',q); }
+        res(out);
+      };
+      img.onerror=()=>res(null);
+      img.src=dataUrl;
+    });
+  }
+
+  async function subirComprobante(input){
+    const file=input.files&&input.files[0]; if(!file) return;
+    const r=reservas.find(x=>x.id===COMPROBANTE_ID); if(!r) return;
+    const btn=document.getElementById('btn-subir');
+    const volver=()=>{ if(btn){ btn.disabled=false; btn.textContent='📎 Subir comprobante'; } input.value=''; };
+    if(btn){ btn.disabled=true; btn.textContent='Subiendo...'; }
+    try{
+      let data=await leerArchivo(file), tipo='imagen';
+      if(file.type==='application/pdf'){
+        tipo='pdf';
+        if(data.length>900000){ alert('El PDF es muy pesado. Mandá una captura de pantalla del comprobante, por favor.'); volver(); return; }
+      } else {
+        data=await achicarImagen(data);
+        if(!data){ alert('No se pudo leer esa imagen. Probá con una captura de pantalla.'); volver(); return; }
+      }
+      const archivo={ data, tipo, nombre:(file.name||'').slice(0,80), subido_ms:Date.now() };
+      // se guarda aparte, asi el calendario no se pone lento; si no se puede, va dentro de la reserva
+      try{ await comprobantesRef.doc(r.id).set(archivo); }
+      catch(e){ await reservasRef.doc(r.id).update({ comprobante_archivo: archivo }); }
+      const senia=r.senia_pedida||0;
+      await reservasRef.doc(r.id).update({
+        estado:'confirmada', senia, saldo:(r.total||0)-senia,
+        comprobante_subido:true, comprobante_ms:Date.now(), pago_verificado:false
+      });
+      comprobanteListo(r, senia);
+    }catch(e){
+      alert('No se pudo subir. Revisá tu conexión y probá de nuevo.');
+      volver();
+    }
+  }
+
+  function comprobanteListo(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const cab=CABANAS.find(c=>c.nombre===r.cabana);
+    const saldo=Math.max(0,(r.total||0)-senia);
+    const msg=`COMPROBANTE ENVIADO\n\nHola! Ya subi el comprobante de la seña.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nSeña: ${formatPrecio(senia)}\nResto a pagar al llegar: ${formatPrecio(saldo)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
+    const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ ¡Listo! Reserva confirmada</h3>
+      <div class="nota" style="font-size:0.95rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}<br>Resto a pagar al llegar: <strong>${formatPrecio(saldo)}</strong></div>
+      <div class="seña-box"><div style="font-weight:700">Abriendo WhatsApp... tocá <u>Enviar</u> para avisarnos</div></div>
+      <a class="btn-ok" href="${waUrl}" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
+      <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box;background:#2c241b">Ver la info de tu estadía</a>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    setTimeout(()=>{ window.location.href=waUrl; }, 1200);
+  }
+
+  // Admin: ver el comprobante que subió el cliente
+  async function verComprobante(id){
+    let a=null;
+    try{ const d=await comprobantesRef.doc(id).get(); if(d.exists) a=d.data(); }catch(e){}
+    if(!a){ const r=reservas.find(x=>x.id===id); a=r&&r.comprobante_archivo; }
+    if(!a||!a.data){ alert('No encontré el comprobante.'); return; }
+    if(a.tipo==='pdf'){
+      try{
+        const b=atob(a.data.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+        const url=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));
+        const l=document.createElement('a'); l.href=url; l.download=(a.nombre||'comprobante.pdf'); l.target='_blank'; document.body.appendChild(l); l.click(); l.remove();
+      }catch(e){ alert('No se pudo abrir el PDF.'); }
+      return;
+    }
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>Comprobante</h3>
+      <img src="${a.data}" style="width:100%;border-radius:8px;border:1px solid #ddd">
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+
+  function marcarPagoOk(id){
+    reservasRef.doc(id).update({ pago_verificado:true })
+      .then(()=>mostrarToast('Pago verificado'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+  function pagoOkDesdeLink(id){
+    if(!pedirAdmin()) return;
+    marcarPagoOk(id);
+    const r=reservas.find(x=>x.id===id);
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✔ Pago verificado</h3>
+      <div class="nota">Último paso: el mensaje con las fechas te llega a tu WhatsApp para reenviárselo a la casera.</div>
+      <button class="btn-ok" style="background:#2c241b" onclick="mandarCasera('${id}', ${r?(r.senia||0):0})">🏠 Mensaje para la casera</button>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+  }
+
+  function eliminarReserva(id){
+    const r=reservas.find(x=>x.id===id);
+    const pendiente=!!(r&&(r.estado==='pendiente'||r.pago_verificado===false));
+    const texto=pendiente?"Eliminar esta reserva pendiente? Las fechas van a quedar libres en el calendario.":"Eliminar esta reserva?";
+    if(!confirm(texto)) return;
+    reservasRef.doc(id).delete()
+      .then(()=>{
+        if(r&&r.comprobante_subido) comprobantesRef.doc(id).delete().catch(()=>{});
+        if(pendiente){
+          const cab=CABANAS.find(c=>c.nombre===r.cabana);
+          if(cab){
+            const fechas=fechasEntreStr(r.entrada,r.salida);
+            ocupadasRef.set({ [cab.id]: firebase.firestore.FieldValue.arrayRemove(...fechas) }, { merge:true });
+          }
+        }
+        mostrarToast(pendiente?'Reserva eliminada y fechas liberadas':'Reserva eliminada');
+      })
+      .catch(()=>mostrarToast('Error al eliminar, revisa tu conexion'));
+  }
+
+  function editarReserva(id){
+    const r=reservas.find(x=>x.id===id);
+    if(!r) return;
+    const fila=document.getElementById('fila-'+id);
+    if(!fila) return;
+    fila.className='fila-edicion';
+    fila.innerHTML=`
+      <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td>
+      <td>${r.cabana.replace('Casa ','')}</td>
+      <td data-label="Entrada">${fechaCorta(r.entrada)}</td>
+      <td data-label="Salida">${fechaCorta(r.salida)}</td>
+      <td data-label="Dias">${r.dias}</td>
+      <td data-label="Total"><input id="edit-total-${id}" type="number" value="${r.total}"></td>
+      <td data-label="Seña"><input id="edit-senia-${id}" type="number" value="${r.senia||0}"></td>
+      <td></td>
+      <td data-label="Tel"><input id="edit-tel-${id}" type="tel" value="${r.tel||''}"></td>
+      <td data-label="Notas"><input id="edit-notas-${id}" type="text" value="${r.notas||''}"></td>
+      <td>
+        <button class="btn-guardar-edicion" onclick="guardarEdicion('${id}')">OK</button>
+        <button class="btn-cancelar-edicion" onclick="renderRegistro()">X</button>
+      </td>
+    `;
+  }
+
+  function guardarEdicion(id){
+    const r=reservas.find(x=>x.id===id);
+    if(!r) return;
+    // Si el campo esta vacio se mantiene el total anterior; un 0 es un valor valido (ej. estadia sin cobro).
+    const totalIngresado=parseFloat(document.getElementById('edit-total-'+id)?.value);
+    const total=isNaN(totalIngresado)?r.total:totalIngresado;
+    const senia=parseFloat(document.getElementById('edit-senia-'+id)?.value)||0;
+    const tel=document.getElementById('edit-tel-'+id)?.value.trim()||'';
+    const notas=document.getElementById('edit-notas-'+id)?.value.trim()||'';
+    const saldo=total-senia;
+    reservasRef.doc(id).update({ total, senia, saldo, tel, notas })
+      .then(()=>mostrarToast('Reserva actualizada'))
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+
+  function detectarSuperposiciones(lista){
+    const superpuestos = new Set();
+    for(let i=0;i<lista.length;i++){
+      for(let j=i+1;j<lista.length;j++){
+        if(lista[i].cabana!==lista[j].cabana) continue;
+        if(lista[i].entrada<=lista[j].salida && lista[j].entrada<=lista[i].salida){
+          superpuestos.add(lista[i].id);
+          superpuestos.add(lista[j].id);
+        }
+      }
+    }
+    return superpuestos;
+  }
+
+  function renderRegistro(){
+    const body=document.getElementById('registro-body');
+    if(!reservas.length){ body.innerHTML='<div class="registro-vacio">No hay reservas registradas</div>'; return; }
+    const ordenadas=[...reservas].sort((a,b)=> (b.fecha_registro||'')<(a.fecha_registro||'')?-1:(b.fecha_registro||'')>(a.fecha_registro||'')?1:0);
+    const superpuestos=detectarSuperposiciones(ordenadas);
+    let html='<table class="registro-tabla"><thead><tr><th>F.Reserva</th><th>Cabana</th><th>Entrada</th><th>Salida</th><th>Dias</th><th>Total</th><th>Seña</th><th>Saldo</th><th>Tel</th><th>Notas</th><th></th></tr></thead><tbody>';
+    ordenadas.forEach(r=>{
+      const saldoOk=r.saldo<=0;
+      const choca=superpuestos.has(r.id);
+      const pend=r.estado==='pendiente';
+      html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':(pend?' class="fila-pendiente"':'')}>
+        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${pend?'<span class="badge-pend">⏳ PENDIENTE'+(r.comprobante_enviado?' 📎':'')+'</span>':''}${(!pend&&r.pago_verificado===false)?'<span class="badge-pend">🔎 REVISAR PAGO</span>':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
+        <td data-label="Total">${formatPrecio(r.total)}</td>
+        <td data-label="Seña">${formatPrecio(r.senia||0)}</td>
+        <td data-label="Saldo"><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
+        <td data-label="Tel">${r.tel?`<a href="https://wa.me/54${r.tel.replace(/\D/g,'').replace(/^(00)?54/,'')}" target="_blank">${r.tel}</a>`:'-'}</td>
+        <td data-label="Notas">${r.notas||'-'}</td>
+        <td>
+          ${pend?`<button class="btn-editar" title="Confirmar pago" onclick="confirmarPendiente('${r.id}')">✅</button>`:''}
+          ${r.comprobante_subido?`<button class="btn-editar" title="Ver comprobante" onclick="verComprobante('${r.id}')">👁</button>`:''}
+          ${(!pend&&r.pago_verificado===false)?`<button class="btn-editar" title="La plata entró: pago verificado" onclick="marcarPagoOk('${r.id}')">✔</button>`:''}
+          ${!pend?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
+          ${(!pend&&r.tel)?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
+          <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>
+          <button class="btn-eliminar" onclick="eliminarReserva('${r.id}')">X</button>
+        </td>
+      </tr>`;
+    });
+    const totalG=reservas.reduce((s,r)=>s+r.total,0);
+    const seniaG=reservas.reduce((s,r)=>s+(r.senia||0),0);
+    const saldoG=reservas.reduce((s,r)=>s+r.saldo,0);
+    html+=`<tr style="background:#f5f0e8;font-weight:700"><td colspan="5">TOTAL</td><td>${formatPrecio(totalG)}</td><td>${formatPrecio(seniaG)}</td><td>${formatPrecio(saldoG)}</td><td colspan="3"></td></tr>`;
+    html+='</tbody></table>';
+    if(superpuestos.size) html='<div class="aviso-superposicion">⚠️ Hay reservas de una misma cabaña con fechas que se pisan. Revisá las filas marcadas.</div>'+html;
+    body.innerHTML=html;
+  }
+
+  function exportarExcel(){
+    if(!reservas.length){ alert("No hay reservas para exportar."); return; }
+    let csv="Cabana,F.Reserva,Entrada,Salida,Dias,Total,Senia,Saldo,Telefono,Notas\n";
+    reservas.forEach(r=>{ csv+=`${r.cabana},${r.fecha_registro||""},${r.entrada.split("-").reverse().join("-")},${r.salida.split("-").reverse().join("-")},${r.dias},${r.total},${r.senia||0},${r.saldo},${r.tel||''},${(r.notas||'').replace(/,/g,' ')}\n`; });
+    const totalG=reservas.reduce((s,r)=>s+r.total,0);
+    csv+=`\nTOTAL,,,, ${totalG}\n`;
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='reservas-caraguata.csv'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  function renderizarCabana(cabId){
+    const cab=CABANAS.find(c=>c.id===cabId);
+    const mes=meses[cabId], a=mes.getFullYear(), m=mes.getMonth();
+    const sel=seleccion[cabId];
+    const tituloEl=document.getElementById('titulo-'+cabId);
+    if(tituloEl) tituloEl.textContent=mes.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    const cal=document.getElementById('cal-'+cabId);
+    if(!cal) return;
+    cal.innerHTML='';
+    const ini=(new Date(a,m,1).getDay()+6)%7, tot=new Date(a,m+1,0).getDate();
+    for(let i=0;i<ini;i++){const v=document.createElement('div');v.className='dia vacio';cal.appendChild(v);}
+    for(let d=1;d<=tot;d++){
+      const f=new Date(a,m,d), k=clave(f);
+      const esPas=f<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()), esOc=(ocupadas[cabId]||[]).includes(k);
+      const esEnt=sel.entrada&&clave(f)===clave(sel.entrada), esSal=sel.salida&&clave(f)===clave(sel.salida);
+      const esRango=sel.entrada&&sel.salida&&f>sel.entrada&&f<sel.salida;
+      const div=document.createElement('div');
+      let cls='dia';
+      if(esEnt||esSal) cls+=' seleccionado';
+      else if(esRango) cls+=' rango';
+      else if(esPas) cls+=' pasado';
+      else if(esOc) cls+=' ocupado';
+      else cls+=' libre';
+      div.className=cls; div.textContent=d;
+      if(!esPas) div.onclick=()=>{
+        if(admin&&esOc){
+          if(confirm("Quitar este dia como ocupado?")){
+            ocupadas[cabId]=ocupadas[cabId].filter(x=>x!==k);
+            ocupadasRef.update({ [cabId]: firebase.firestore.FieldValue.arrayRemove(k) })
+              .then(()=>mostrarToast('Guardado'))
+              .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+            renderizarCabana(cabId);
+          }
+          return;
+        }
+        if(!esOc){
+          if(!sel.entrada){sel.entrada=f;sel.salida=null;}
+          else if(!sel.salida){
+            if(clave(f)===clave(sel.entrada)){ if(!admin && !unDiaPermitido(cabId,f)){ alert('La estadía mínima es de 2 días 😊 Tocá una fecha de salida más adelante.'); } else { sel.salida=f; } }
+            else if(f>sel.entrada){ if(hayOcupadoEnRango(cabId,sel.entrada,f)){alert("Hay dias ocupados en ese rango.");sel.entrada=null;sel.salida=null;}else{sel.salida=f;} }
+            else{sel.entrada=f;sel.salida=null;}
+          } else{
+            if(f>sel.salida){ if(hayOcupadoEnRango(cabId,sel.salida,f))alert("Hay dias ocupados.");else sel.salida=f; }
+            else if(f<sel.entrada){sel.entrada=f;}
+            else{sel.entrada=f;sel.salida=null;}
+          }
+          renderizarCabana(cabId); actualizarResumen(cabId);
+        }
+      };
+      cal.appendChild(div);
+    }
+  }
+
+  function actualizarResumen(cabId){
+    const cab=CABANAS.find(c=>c.id===cabId);
+    const sel=seleccion[cabId];
+    const resumen=document.getElementById('resumen-'+cabId);
+    const btnWa=document.getElementById('wa-'+cabId);
+    const btnGuardar=document.getElementById('guardar-'+cabId);
+    const btnMarcar=document.getElementById('btn-marcar-'+cabId);
+    const formRes=document.getElementById('form-'+cabId);
+    if(!resumen) return;
+    const btnRsv=document.getElementById('rsv-'+cabId);
+    if(btnRsv) btnRsv.style.display=((RESERVA_ONLINE||admin)&&sel.entrada&&sel.salida)?'block':'none';
+    if(sel.entrada&&sel.salida){
+      const dias=diasEntre(sel.entrada,sel.salida)+1;
+      const total=calcularTotalRango(cabId,sel.entrada,sel.salida);
+      const rec=calcularRecargo(cabId,sel.entrada,sel.salida);
+      resumen.style.display='block';
+      resumen.innerHTML=`
+        <div class="linea"><span>Entrada:</span><span>${formatFechaCorta(sel.entrada)} (${HORA_ENTRADA})</span></div>
+        <div class="linea"><span>Salida:</span><span>${formatFechaCorta(sel.salida)} (${HORA_SALIDA})</span></div>
+        <div class="linea"><span>Dias:</span><span>${dias}</span></div>
+        ${rec.finde.monto?`<div class="linea" style="color:#8a6d00;font-size:0.8rem"><span>Sábado y domingo van juntos</span><span>+${formatPrecio(rec.finde.monto)}</span></div>`:''}
+        ${rec.feriado.monto?`<div class="linea" style="color:#c62828;font-size:0.95rem;font-weight:700"><span>Feriado largo: mínimo ${rec.feriado.dias} días</span><span>+${formatPrecio(rec.feriado.monto)}</span></div>`:''}
+        <div class="linea total"><span>Total estimado:</span><span>${formatPrecio(total)}</span></div>
+        <button class="reset" onclick="resetSeleccion('${cabId}')">Limpiar seleccion</button>
+      `;
+      if(btnWa){
+        const nombreMensaje = cab.id==='verde'?'Casa Ver de':cab.id==='roja'?'Casa Ro ja':cab.id==='blanca'?'Casa Blan ca':'Casa Ma rron';
+        const msg=`Hola! Quiero consultar disponibilidad para ${nombreMensaje}.\nEntrada: ${formatFecha(sel.entrada)} (desde las ${HORA_ENTRADA})\nSalida: ${formatFecha(sel.salida)} (hasta las ${HORA_SALIDA})\nDias: ${dias}\nTotal estimado: ${formatPrecio(total)}\n\nVer calendario: ${CAL_URL}\n\nEnviado desde la web`;
+        btnWa.href=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+        btnWa.style.display='block';
+      }
+      if(btnMarcar) btnMarcar.style.display=admin?'block':'none';
+      if(btnGuardar) btnGuardar.style.display='none';
+      if(formRes) formRes.style.display='none';
+    } else if(sel.entrada){
+      resumen.style.display='block';
+      resumen.innerHTML=`<div style="text-align:center;color:#888;font-size:0.85rem;">Entrada: ${formatFechaCorta(sel.entrada)} (${HORA_ENTRADA})<br>Ahora toca la fecha de salida</div><button class="reset" onclick="resetSeleccion('${cabId}')">Cancelar</button>`;
+      if(btnWa) btnWa.style.display='none';
+      if(btnMarcar) btnMarcar.style.display='none';
+      if(btnGuardar) btnGuardar.style.display='none';
+      if(formRes) formRes.style.display='none';
+    } else{
+      resumen.style.display='none';
+      if(btnWa) btnWa.style.display='none';
+      if(btnMarcar) btnMarcar.style.display='none';
+      if(btnGuardar) btnGuardar.style.display='none';
+      if(formRes) formRes.style.display='none';
+    }
+  }
+
+  function resetSeleccion(cabId){
+    seleccion[cabId]={entrada:null,salida:null};
+    const f=document.getElementById('form-'+cabId);
+    if(f){ f.style.display='none'; f.querySelectorAll('input,textarea').forEach(i=>i.value=''); }
+    renderizarCabana(cabId); actualizarResumen(cabId);
+  }
+
+  function renderizar(){
+    const grid=document.getElementById('cabanas-grid');
+    grid.innerHTML='';
+    CABANAS.forEach(cab=>{
+      const card=document.createElement('div');
+      card.className='cabana-card';
+      card.innerHTML=`
+        <div class="cabana-header">
+          <div class="cabana-dot" style="background:${cab.color}"></div>
+          <h3>${cab.nombre}</h3>
+          <span class="cabana-cap">${cab.capacidad}</span>
+        </div>
+        <div class="nav-cabana">
+          <button onclick="cambiarMesCabana('${cab.id}',-1)">&#8592;</button>
+          <h2 id="titulo-${cab.id}"></h2>
+          <button onclick="cambiarMesCabana('${cab.id}',1)">&#8594;</button>
+        </div>
+        <div class="leyenda leyenda-casa">
+          <div class="leyenda-item"><div class="dot" style="background:#d4ead7"></div> Disponible</div>
+          <div class="leyenda-item"><div class="dot" style="background:#e03030"></div> Ocupado</div>
+          <div class="leyenda-item"><div class="dot" style="background:#f0c040"></div> Seleccionado</div>
+        </div>
+        <div class="instruccion">Toca la fecha de entrada</div>
+        <div class="dias-semana"><span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span></div>
+        <div class="calendario-grid" id="cal-${cab.id}"></div>
+        <div class="resumen-card" id="resumen-${cab.id}" style="display:none"></div>
+        <div class="form-reserva" id="form-${cab.id}" style="display:none">
+          <h4>Datos de la reserva (solo admin)</h4>
+          <input id="tel-${cab.id}" type="tel" placeholder="Telefono del cliente (ej: 1155667788)">
+          <div class="fila">
+            <input id="senia-${cab.id}" type="number" placeholder="Senia recibida $">
+          </div>
+          <textarea id="notas-${cab.id}" placeholder="Notas (ej: trae 4 personas, tiene mascota...)"></textarea>
+        </div>
+        <button class="btn-marcar-ocupado" id="btn-marcar-${cab.id}" style="display:none" onclick="marcarOcupado('${cab.id}')">Marcar dias como ocupados</button>
+        <button class="btn-guardar-reserva" id="guardar-${cab.id}" style="display:none" onclick="guardarReservaConDatos('${cab.id}');resetSeleccion('${cab.id}')">Guardar en registro de caja</button>
+        <button class="btn-cabana" id="rsv-${cab.id}" style="background:#2c241b;display:none;width:calc(100% - 1.6rem)" onclick="abrirReserva('${cab.id}')">Reservar ahora</button>
+        <a class="btn-cabana" id="wa-${cab.id}" style="background:${cab.color};display:none" href="#" target="_blank">Enviar consulta por WhatsApp</a>
+      `;
+      grid.appendChild(card);
+      renderizarCabana(cab.id);
+    });
+    document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
+    document.getElementById('registro-contenedor').style.display=admin?'block':'none';
+    if(admin){
+      renderRegistro();
+      const sel=document.getElementById('manual-cabana');
+      if(sel && !sel.options.length) CABANAS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o); });
+    }
+    CABANAS.forEach(c=>actualizarResumen(c.id));
+  }
+
+  renderizar();
+
+  ocupadasRef.onSnapshot((doc)=>{
+    if(doc.exists){
+      ocupadas = Object.assign({verde:[],roja:[],blanca:[],marron:[]}, doc.data());
+      CABANAS.forEach(c=>renderizarCabana(c.id));
+    }
+    // Si el documento no existe (o la lectura viene de una cache local desactualizada
+    // por un corte de conexion), NUNCA se reescribe la base de datos desde aca.
+    // Solo se marcan fechas cuando el usuario lo hace explicitamente con arrayUnion/arrayRemove.
+  }, (err)=>{
+    mostrarToast('Sin conexion a la base de datos');
+  });
+
+  feriadosRef.onSnapshot((doc)=>{
+    // Solo lectura: nunca se escribe desde aca.
+    const lista = doc.exists ? doc.data().bloques : null;
+    feriadosNube = (Array.isArray(lista) && lista.length) ? lista : null;
+    CABANAS.forEach(c=>actualizarResumen(c.id));
+    if (admin) renderFeriadosAdmin();
+  }, (err)=>{
+    mostrarToast('Sin conexion a la lista de feriados');
+  });
+
+  reservasRef.onSnapshot((snap)=>{
+    reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    if (admin) renderRegistro();
+    if (!snap.metadata || !snap.metadata.fromCache){ limpiarPendientesVencidas(); if(CONFIRMAR_ID) mostrarPanelConfirmar(); else if(COMPROBANTE_LINK) mostrarSubirComprobante(); else if(PAGAR_LINK) mostrarPagarDesdeLink(); else revisarCaseraPend(); }
+  }, (err)=>{
+    mostrarToast('Sin conexion al registro de reservas');
+  });
+</script>
+</body>
+</html>

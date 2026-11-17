@@ -389,6 +389,12 @@
     return r;
   }
 
+  // Minimo 2 dias. Un solo dia se permite solo dentro de un finde o feriado largo
+  // (ahi el recargo completa los dias libres; si los demas ya estan alquilados, queda ese dia suelto).
+  function unDiaPermitido(cabId, f){
+    return !!bloqueDe(f);
+  }
+
   function calcularTotalRango(cabId, entrada, salida) {
     let total = 0;
     let d = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
@@ -1391,7 +1397,7 @@
         if(!esOc){
           if(!sel.entrada){sel.entrada=f;sel.salida=null;}
           else if(!sel.salida){
-            if(clave(f)===clave(sel.entrada)){sel.salida=f;}
+            if(clave(f)===clave(sel.entrada)){ if(!admin && !unDiaPermitido(cabId,f)){ alert('La estadía mínima es de 2 días 😊 Tocá una fecha de salida más adelante.'); } else { sel.salida=f; } }
             else if(f>sel.entrada){ if(hayOcupadoEnRango(cabId,sel.entrada,f)){alert("Hay dias ocupados en ese rango.");sel.entrada=null;sel.salida=null;}else{sel.salida=f;} }
             else{sel.entrada=f;sel.salida=null;}
           } else{

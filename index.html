@@ -970,9 +970,13 @@
     const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     let msg=`${r.cabana.replace('Casa ','')} ${f(r.entrada)} al ${f(r.salida)}`;
     if(r.tel) msg+=`\nTel: ${telInternacional(r.tel)}`;
-    msg+=`\nNotas: ${r.nombre||''}`;
+    const cliente=r.nombre||(((r.notas||'').match(/^Reserva online - (.*?) -/)||[])[1])||'';
+    const notasPropias=/^Reserva online/.test(r.notas||'')?'':(r.notas||'');
+    if(cliente) msg+=`\nCliente: ${cliente}`;
+    msg+=`\nNotas: ${notasPropias}`;
     msg+=`\nSeña: ${formatPrecio(senia)}\nResto a pagar: ${formatPrecio(Math.max(0,(r.total||0)-senia))}`;
     window.open('https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg),'_blank');
+    reservasRef.doc(id).update({ yami_avisado:true }).catch(()=>{});
   }
 
   // Mensaje que se le manda al cliente cuando se confirma la reserva (editable)

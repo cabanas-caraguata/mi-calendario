@@ -416,8 +416,18 @@
   const HORAS_ADMIN = 2;
   function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
   function recordarAdmin(on){ try{ on ? localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)) : localStorage.removeItem(ADMIN_KEY); }catch(e){} }
-  let admin = new URLSearchParams(location.search).get('admin') === PASS || adminGuardado();
+  // Celular de Rubén: se marca la primera vez que entra con el link ?admin=...
+  // En ese celular entra solo en modo admin. El botón de admin solo aparece estando en modo admin (para salir);
+  // a los clientes no les aparece nunca. Para entrar: desde registro.html, botón "Calendario (modo admin)".
+  const RUBEN_KEY = 'celu_ruben';
+  function esCeluRuben(){ try{ return localStorage.getItem(RUBEN_KEY)==='1'; }catch(e){ return false; } }
+  const linkAdmin = new URLSearchParams(location.search).get('admin') === PASS;
+  if(linkAdmin){ try{ localStorage.setItem(RUBEN_KEY,'1'); }catch(e){} }
+  let admin = linkAdmin || adminGuardado() || esCeluRuben();
   if(admin) recordarAdmin(true);
+  function mostrarBotonAdmin(){ const b=document.getElementById('btn-admin'); if(b) b.style.display = admin ? '' : 'none'; }
+  document.addEventListener('DOMContentLoaded', mostrarBotonAdmin);
+  mostrarBotonAdmin();
 
   function clave(f){ return f.getFullYear()+'-'+String(f.getMonth()+1).padStart(2,'0')+'-'+String(f.getDate()).padStart(2,'0'); }
   function formatFecha(f){ return f.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -442,9 +452,11 @@
   function hayOcupadoEnRango(cabId,entrada,salida){ const ocp=ocupadas[cabId]||[]; let d=new Date(entrada); while(d<=salida){if(ocp.includes(clave(d)))return true;d=new Date(d.getTime()+86400000);} return false; }
 
   function toggleAdmin(){
-    if(!admin){ const p=prompt("Contrasena:"); if(p!==PASS){alert("Incorrecta.");return;} }
+    if(!admin && !esCeluRuben()){ const p=prompt("Contrasena:"); if(p!==PASS){alert("Incorrecta.");return;} }
     admin=!admin;
     recordarAdmin(admin);
+    if(!admin){ try{ localStorage.removeItem(RUBEN_KEY); }catch(e){} }
+    mostrarBotonAdmin();
     document.getElementById('btn-admin').textContent=admin?"Salir del modo admin":"Modo administrador";
     document.getElementById('registro-contenedor').style.display=admin?'block':'none';
     if(admin){

@@ -25,7 +25,9 @@
   .separador { font-family:'Playfair Display',serif; font-size:1.1rem; color:#5a5044; margin:1.2rem 0 0.7rem; padding-bottom:0.3rem; border-bottom:2px solid #e0d8cc; }
   .separador-alerta { color:#b03a2e; border-bottom-color:#e5b3ac; }
   .tarjeta { background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1rem 1.3rem; margin-bottom:0.9rem; }
+  .tarjeta.falta { background:#fff4cc; border-color:#e8cf7a; }
   .tarjeta.choca { background:#fdeceb; border-color:#e5b3ac; }
+  .falta-txt { font-size:0.85rem; font-weight:600; color:#8a6a00; margin-bottom:0.6rem; }
   .tarjeta-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid #f0ece4; }
   .tarjeta-cabana { font-family:'Playfair Display',serif; font-size:1.25rem; }
   .tarjeta-fechas { font-size:0.95rem; color:#5a5044; }
@@ -67,7 +69,7 @@
   </header>
   <div class="contenedor">
     <div class="barra-superior">
-      <a href="https://cabanas-caraguata.github.io/mi-calendario/">← Volver al calendario</a>
+      <a href="https://cabanas-caraguata.github.io/mi-calendario/?admin=1111">📅 Calendario (modo admin)</a>
       <button class="btn-excel" onclick="exportarExcel()">Exportar Excel</button>
     </div>
     <div class="resumen" id="resumen"></div>
@@ -219,6 +221,12 @@
   function avisarCliente(id){
     const r = reservas.find(x=>x.id===id); if(!r || !r.tel) return;
     window.open('https://api.whatsapp.com/send?phone=' + telWhatsApp(r.tel) + '&text=' + encodeURIComponent(mensajeConfirmacion(r, r.senia||0)), '_blank');
+    reservasRef.doc(id).update({ cliente_avisado:true }).catch(()=>{});
+  }
+  // Marca la reserva como avisada (cliente y Yami) sin abrir WhatsApp
+  function yaAvisado(id){
+    reservasRef.doc(id).update({ cliente_avisado:true, yami_avisado:true })
+      .catch(()=> alert('No se pudo guardar. Revisá la conexión.'));
   }
 
   function avisarPagoTotal(r){
@@ -303,12 +311,22 @@
       const saldo = saldoDe(r);
       const saldoOk = saldo <= 0;
       const choca = superpuestos.has(r.id);
+      // Lo que falta hacer (solo reservas de hoy en adelante): la tarjeta se pinta de amarillo
+      const faltas = [];
+      if((r.salida||'') >= hoy){
+        if(r.estado==='pendiente') faltas.push('⏳ confirmar');
+        else if(r.pago_verificado===false) faltas.push('🔎 ver que entró la plata');
+        if(r.estado!=='pendiente' && r.tel && !r.cliente_avisado) faltas.push('💬 avisar al cliente');
+        if(r.estado!=='pendiente' && !r.yami_avisado) faltas.push('🏠 mensaje a Yami');
+      }
+      const falta = faltas.length > 0;
       return `
-        <div class="tarjeta${choca?' choca':''}">
+        <div class="tarjeta${choca?' choca':(falta?' falta':'')}">
           <div class="tarjeta-top">
             <div class="tarjeta-cabana">${choca?'⚠️ ':''}${r.estado==='pendiente'?'⏳ ':(r.pago_verificado===false?'🔎 ':'')}${r.cabana}</div>
             <div class="tarjeta-fechas">${fechaCorta(r.entrada)} → ${fechaCorta(r.salida)} · ${r.dias} día${r.dias>1?'s':''}</div>
           </div>
+          ${falta ? `<div class="falta-txt">Falta: ${faltas.join(' · ')}</div>` : ''}
           <div class="tarjeta-grid">
             <div><div class="etiqueta">Cargada</div><div class="valor">${r.fecha_registro?fechaCorta(r.fecha_registro):'-'}</div></div>
             <div><div class="etiqueta">Total</div><div class="valor">${formatPrecio(r.total)}</div></div>
@@ -322,6 +340,7 @@
           ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
           ${(r.estado==='pendiente' || !r.tel) ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="avisarCliente('${r.id}')">💬 Avisar al cliente</button>`}
           ${r.estado==='pendiente' ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="enviarACasera('${r.id}')">🏠 Mensaje para Yami</button>`}
+          ${(falta && r.estado!=='pendiente' && r.pago_verificado!==false && (!r.yami_avisado || (r.tel && !r.cliente_avisado))) ? `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="yaAvisado('${r.id}')">✔ Ya avisé a los dos</button>` : ''}
         </div>`;
     };
     lista.innerHTML =

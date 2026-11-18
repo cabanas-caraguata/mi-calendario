@@ -97,9 +97,9 @@
 
   let reservas = [];
 
-  // Comparte con el calendario el modo admin abierto por un rato (2 horas, se renueva al entrar)
+  // Comparte con el calendario el modo admin abierto 30 días (se renueva al entrar)
   const ADMIN_KEY = 'admin_hasta';
-  const HORAS_ADMIN = 2;
+  const HORAS_ADMIN = 24 * 30; // 30 días
   function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
   function recordarAdmin(){ try{ localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)); }catch(e){} }
 

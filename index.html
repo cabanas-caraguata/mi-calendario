@@ -413,7 +413,7 @@
   CABANAS.forEach(c=>{ meses[c.id]=new Date(hoy.getFullYear(),hoy.getMonth(),1); seleccion[c.id]={entrada:null,salida:null}; });
   // El modo admin queda abierto un rato en este celular (se renueva cada vez que entras)
   const ADMIN_KEY = 'admin_hasta';
-  const HORAS_ADMIN = 2;
+  const HORAS_ADMIN = 24 * 30; // 30 días
   function adminGuardado(){ try{ return Date.now() < Number(localStorage.getItem(ADMIN_KEY)||0); }catch(e){ return false; } }
   function recordarAdmin(on){ try{ on ? localStorage.setItem(ADMIN_KEY, String(Date.now()+HORAS_ADMIN*3600000)) : localStorage.removeItem(ADMIN_KEY); }catch(e){} }
   // Celular de Rubén: se marca la primera vez que entra con el link ?admin=...

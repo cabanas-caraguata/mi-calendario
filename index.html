@@ -1082,6 +1082,7 @@
     const senia=(seniaForzada!==undefined)?seniaForzada:(r.senia||0);
     const num=r.tel.replace(/\D/g,'').replace(/^(00)?54/,'');
     window.open('https://api.whatsapp.com/send?phone=54'+num+'&text='+encodeURIComponent(mensajeConfirmacion(r,senia)),'_blank');
+    reservasRef.doc(id).update({ cliente_avisado:true }).catch(()=>{});
   }
 
   // ---------------------------------------------------------------

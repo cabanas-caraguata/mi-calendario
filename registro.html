@@ -316,7 +316,8 @@
       if((r.salida||'') >= hoy){
         if(r.estado==='pendiente') faltas.push('⏳ confirmar');
         else if(r.pago_verificado===false) faltas.push('🔎 ver que entró la plata');
-        if(r.estado!=='pendiente' && r.tel && !r.cliente_avisado) faltas.push('💬 avisar al cliente');
+        // Si subió el comprobante, el aviso de confirmación le llegó solo (AutoResponder)
+        if(r.estado!=='pendiente' && r.tel && !r.cliente_avisado && !r.comprobante_subido) faltas.push('💬 avisar al cliente');
         if(r.estado!=='pendiente' && !r.yami_avisado) faltas.push('🏠 mensaje a Yami');
       }
       const falta = faltas.length > 0;
@@ -340,7 +341,7 @@
           ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
           ${(r.estado==='pendiente' || !r.tel) ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="avisarCliente('${r.id}')">💬 Avisar al cliente</button>`}
           ${r.estado==='pendiente' ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="enviarACasera('${r.id}')">🏠 Mensaje para Yami</button>`}
-          ${(falta && r.estado!=='pendiente' && r.pago_verificado!==false && (!r.yami_avisado || (r.tel && !r.cliente_avisado))) ? `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="yaAvisado('${r.id}')">✔ Ya avisé a los dos</button>` : ''}
+          ${(falta && r.estado!=='pendiente' && r.pago_verificado!==false && (!r.yami_avisado || (r.tel && !r.cliente_avisado && !r.comprobante_subido))) ? `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="yaAvisado('${r.id}')">✔ Ya avisé a los dos</button>` : ''}
         </div>`;
     };
     lista.innerHTML =

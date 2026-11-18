@@ -1095,6 +1095,8 @@
     } else if(r.comprobante_subido){
       html=`<h3>✅ Ya recibimos tu comprobante</h3>
         <div class="nota" style="font-size:0.9rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}. Tu reserva está confirmada.</div>
+        <div class="nota" style="font-size:0.9rem;color:#2c241b;margin-top:0.5rem">Si todavía no le mandaste a Rubén el mensaje por WhatsApp, tocá acá 👇</div>
+        <a class="btn-ok" href="${waComprobanteEnviado(r, r.senia||0)}" style="text-decoration:none;text-align:center;box-sizing:border-box">📲 Avisarle a Rubén por WhatsApp</a>
         <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box">Ver la info de tu estadía</a>`;
     } else {
       html=`<h3>📎 Subí tu comprobante</h3>
@@ -1189,17 +1191,25 @@
     }
   }
 
-  function comprobanteListo(r, senia){
+  // Link de WhatsApp con el aviso "COMPROBANTE ENVIADO" (para que Rubén se entere)
+  function waComprobanteEnviado(r, senia){
     const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const cab=CABANAS.find(c=>c.nombre===r.cabana);
     const saldo=Math.max(0,(r.total||0)-senia);
     const msg=`COMPROBANTE ENVIADO\n\nHola! Ya subi el comprobante de la seña.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nSeña: ${formatPrecio(senia)}\nResto a pagar al llegar: ${formatPrecio(saldo)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
-    const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+    return `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+  }
+  const AVISO_ENVIAR_WA = `<div class="aviso-comprobante"><div class="titulo">⚠️ Falta un último paso</div>Tu reserva quedó confirmada, pero <strong>Rubén todavía no se enteró</strong>. En WhatsApp tocá <strong>Enviar</strong> para avisarle. Si cerraste WhatsApp sin enviar, tocá el botón verde de acá abajo.</div>`;
+
+  function comprobanteListo(r, senia){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const saldo=Math.max(0,(r.total||0)-senia);
+    const waUrl=waComprobanteEnviado(r, senia);
     document.getElementById('modal-contenido').innerHTML=`
       <h3>✅ ¡Listo! Reserva confirmada</h3>
       <div class="nota" style="font-size:0.95rem;color:#2c241b">${r.cabana} · ${f(r.entrada)} al ${f(r.salida)}<br>Resto a pagar al llegar: <strong>${formatPrecio(saldo)}</strong></div>
-      <div class="seña-box"><div style="font-weight:700">Abriendo WhatsApp... tocá <u>Enviar</u> para avisarnos</div></div>
-      <a class="btn-ok" href="${waUrl}" style="text-decoration:none;text-align:center;box-sizing:border-box">Si no se abrió WhatsApp, tocá acá</a>
+      ${AVISO_ENVIAR_WA}
+      <a class="btn-ok" href="${waUrl}" style="text-decoration:none;text-align:center;box-sizing:border-box">📲 Avisarle a Rubén por WhatsApp</a>
       <a class="btn-ok" href="${INFO_URL}" style="text-decoration:none;text-align:center;box-sizing:border-box;background:#2c241b">Ver la info de tu estadía</a>
       <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
     setTimeout(()=>{ window.location.href=waUrl; }, 1200);

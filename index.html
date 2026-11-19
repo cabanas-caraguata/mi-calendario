@@ -391,7 +391,11 @@
 
   // Minimo 2 dias. Un solo dia se permite solo dentro de un finde o feriado largo
   // (ahi el recargo completa los dias libres; si los demas ya estan alquilados, queda ese dia suelto).
+  // Dias que NO se pueden alquilar sueltos (minimo 2 dias). Pedido de Ruben: el lunes 23/11/2026
+  // solo con el martes 24. BORRAR despues del 24/11/2026.
+  const SIN_DIA_SUELTO = ['2026-11-23'];
   function unDiaPermitido(cabId, f){
+    if (SIN_DIA_SUELTO.includes(clave(f))) return false;
     return !!bloqueDe(f);
   }
 

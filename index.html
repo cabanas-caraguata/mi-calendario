@@ -308,8 +308,14 @@
   ];
   let feriadosNube = null; // null = todavia no hay lista guardada en la nube
 
+  // Feriados que van SIEMPRE, aunque haya lista en la nube (pedido de Ruben)
+  const FERIADOS_FIJOS = [
+    { desde:"2027-02-06", hasta:"2027-02-09" }   // Carnaval 2027 (sab-mar): los 4 dias juntos
+  ];
   function getFeriados(){
-    return feriadosNube ? feriadosNube : FERIADOS_BASE;
+    const lista = (feriadosNube ? feriadosNube : FERIADOS_BASE).slice();
+    FERIADOS_FIJOS.forEach(f => { if (!lista.some(x => x.desde === f.desde)) lista.push(f); });
+    return lista;
   }
 
   function sumarDias(f, n){ return new Date(f.getFullYear(), f.getMonth(), f.getDate()+n); }

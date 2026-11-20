@@ -27,6 +27,7 @@
   .tarjeta { background:#fff; border:1px solid #e0d8cc; border-radius:12px; padding:1rem 1.3rem; margin-bottom:0.9rem; }
   .tarjeta.falta { background:#fff4cc; border-color:#e8cf7a; }
   .tarjeta.choca { background:#fdeceb; border-color:#e5b3ac; }
+  .pasadas .tarjeta { background:#e9e9e9; border-color:#cfcfcf; }
   .falta-txt { font-size:0.85rem; font-weight:600; color:#8a6a00; margin-bottom:0.6rem; }
   .tarjeta-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid #f0ece4; }
   .tarjeta-cabana { font-family:'Playfair Display',serif; font-size:1.25rem; }
@@ -350,7 +351,7 @@
       (faltaCobrar.length ? '<div class="separador separador-alerta">⚠️ Falta cobrar</div>' + faltaCobrar.map(tarjeta).join('') : '') +
       '<div class="separador">Hoy y próximas</div>' +
       (proximas.length ? proximas.map(tarjeta).join('') : '<div class="vacio">No hay reservas para hoy ni próximas</div>') +
-      (pasadas.length ? '<div class="separador">Ya pasaron</div>' + pasadas.map(tarjeta).join('') : '');
+      (pasadas.length ? '<div class="separador">Ya pasaron</div><div class="pasadas">' + pasadas.map(tarjeta).join('') + '</div>' : '');
   }
 
   function escucharReservas(){

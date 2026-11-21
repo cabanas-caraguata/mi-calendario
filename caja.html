@@ -269,7 +269,7 @@ $('llegLista').addEventListener('click',async ev=>{const b=ev.target.closest('.c
   if(tl.length===11&&tl[0]==='9')tl=tl.slice(1);if(tl.length===10&&tl.startsWith('15'))tl='11'+tl.slice(2);if(tl.length===12&&tl.startsWith('1115'))tl='11'+tl.slice(4);
   if(tl){const resena='https://g.page/r/CdzvbHsO9WpWEBE/review';
    const rec=(String(r.salida)<=hoy()?'¡Hola! Recibimos el pago total, muchas gracias por elegirnos 😊\nSi la pasaron lindo, nos ayuda mucho una reseña en Google:\n':'¡Hola! Recibimos el pago total, muchas gracias 😊 ¡Que disfruten la estadía!\nSi la pasan lindo, nos ayuda mucho una reseña en Google:\n')+resena;
-   msg+='\n\n👇 Tocá acá para mandarle el recibo al cliente:\nhttps://wa.me/54'+tl+'?text='+encodeURIComponent(rec)}
+   msg+='\n\n👇 Tocá acá para mandarle el recibo al cliente:\nhttps://wa.me/549'+tl+'?text='+encodeURIComponent(rec)}
   location.href='https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg);
  }catch(e){b.disabled=false;b.dataset.ok='';b.textContent='No se pudo guardar, probá de nuevo'}});
 // borrar

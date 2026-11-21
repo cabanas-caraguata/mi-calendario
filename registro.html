@@ -145,6 +145,10 @@
 
   let abierta = null;
 
+  function restoOk(id){
+    reservasRef.doc(id).update({ resto_verificado:true }).catch(()=>alert('Error al guardar, revisá tu conexión'));
+  }
+
   function saldoDe(r){
     return (r.total||0) - (r.senia||0) - (r.pago_llegada||0);
   }
@@ -298,7 +302,7 @@
     const _h = new Date();
     const hoy = _h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
     // Las que esperan el okay de Rubén (sin comprobante o con pago sin revisar) van fijas arriba de todo
-    const aRevisar = r => r.estado==='pendiente' || r.pago_verificado===false;
+    const aRevisar = r => r.estado==='pendiente' || r.pago_verificado===false || r.resto_verificado===false;
     const paraRevisar = ordenadas.filter(aRevisar);
     const resto = ordenadas.filter(r => !aRevisar(r));
     // Reservas online ya confirmadas a las que todavía no les mandaste el mensaje a Yami: van arriba hasta que toques "Mensaje para Yami"
@@ -317,6 +321,7 @@
       if((r.salida||'') >= hoy){
         if(r.estado==='pendiente') faltas.push('⏳ confirmar');
         else if(r.pago_verificado===false) faltas.push('🔎 ver que entró la plata');
+        if(r.resto_verificado===false) faltas.push('🔎 ver que entró el resto');
         // Si subió el comprobante, el aviso de confirmación le llegó solo (AutoResponder)
         if(r.estado!=='pendiente' && r.tel && !r.cliente_avisado && !r.comprobante_subido) faltas.push('💬 avisar al cliente');
         if(r.estado!=='pendiente' && !r.yami_avisado) faltas.push('🏠 mensaje a Yami');
@@ -339,6 +344,7 @@
             <div><div class="etiqueta">Notas</div><div class="valor">${r.notas||'-'}</div></div>
           </div>
           ${(r.estado!=='pendiente' && r.pago_verificado===false) ? `<button class="btn-pago btn-editar" style="margin-bottom:0.5rem" onclick="pagoOk('${r.id}')">✔ La plata entró</button>` : ''}
+          ${r.resto_verificado===false ? `<button class="btn-pago btn-editar" style="margin-bottom:0.5rem" onclick="restoOk('${r.id}')">✔ Entró el resto (${formatPrecio(r.resto_monto||0)})</button>` : ''}
           ${abierta===r.id ? editorPagos(r) : `<button class="btn-pago btn-editar" onclick="abrirPagos('${r.id}')">💵 Cargar pagos</button>`}
           ${(r.estado==='pendiente' || !r.tel) ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="avisarCliente('${r.id}')">💬 Avisar al cliente</button>`}
           ${r.estado==='pendiente' ? '' : `<button class="btn-pago btn-editar" style="margin-top:0.5rem" onclick="enviarACasera('${r.id}')">🏠 Mensaje para Yami</button>`}

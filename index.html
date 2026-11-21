@@ -945,11 +945,15 @@
           <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 No pagó, eliminar y liberar fechas</button>`;
       } else {
         const revisar=r.pago_verificado===false;
-        html=`<h3>${revisar?'📎 Comprobante subido':'✅ Esta reserva ya está confirmada'}</h3>${datos}
+        html=`<h3>${revisar?'📎 Comprobante subido':(r.resto_verificado===false?'📎 Pagó el resto':'✅ Esta reserva ya está confirmada')}</h3>${datos}
           <div class="linea"><span>Seña:</span><span>${formatPrecio(r.senia||0)}</span></div>
           ${revisar?`<div class="nota" style="color:#8a5a00;font-weight:700">🔎 Revisá en Mercado Pago que haya entrado la plata.</div>`:''}
           ${r.comprobante_subido?`<button class="btn-ok" style="background:#5a6b7a" onclick="verComprobante('${r.id}')">👁 Ver comprobante</button>`:''}
           ${revisar?`<button class="btn-ok" onclick="pagoOkDesdeLink('${r.id}')">✔ La plata entró</button>`:''}
+          ${r.resto_comprobante_subido?`<div class="linea"><span>Resto pagado:</span><span>${formatPrecio(r.resto_monto||0)}</span></div>`:''}
+          ${r.resto_verificado===false?`<div class="nota" style="color:#8a5a00;font-weight:700">🔎 Subió el comprobante del RESTO: revisá en Mercado Pago que haya entrado.</div>`:''}
+          ${r.resto_comprobante_subido?`<button class="btn-ok" style="background:#5a6b7a" onclick="verComprobanteResto('${r.id}')">👁 Ver comprobante del resto</button>`:''}
+          ${r.resto_verificado===false?`<button class="btn-ok" onclick="marcarRestoOk('${r.id}')">✔ Entró el resto</button><button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="restoTrucho('${r.id}')">✖ Comprobante del resto trucho</button>`:''}
           ${r.tel?`<button class="btn-ok" onclick="enviarConfirmacion('${r.id}')">💬 Avisar al cliente</button>`:''}
           <button class="btn-ok" style="margin-top:0.6rem;background:#2c241b" onclick="mandarCasera('${r.id}', ${r.senia||0})">🏠 Mensaje para la casera</button>
           <button class="btn-ok" style="margin-top:0.6rem;background:#e03030" onclick="eliminarDesdeLink()">🗑 ${revisar?'Comprobante trucho: eliminar y liberar fechas':'Eliminar reserva'}</button>
@@ -1030,55 +1034,145 @@
   const PAGAR_ID = PARAMS_PAGAR.get('pagar') || '';
   let pagarMostrado=false;
 
-  function saldoDe(r){ return Math.max(0,(r.total||0)-(r.senia||0)); }
+  function saldoDe(r){ return Math.max(0,(r.total||0)-(r.senia||0)-(r.pago_llegada||0)); }
+  let PAGAR_RES_ID='';
+
+  // Sin numero de reserva (boton verde o link de info): se busca la reserva por telefono
+  function pedirTelPagar(){
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>💳 Pagar lo que falta</h3>
+      <div class="nota" style="font-size:0.9rem;color:#2c241b">Poné el teléfono que usaste al reservar.</div>
+      <input id="tel-pagar" name="tel" type="tel" autocomplete="tel" placeholder="Tu teléfono (ej: 1155667788)" style="width:100%;box-sizing:border-box;padding:0.6rem;border:1px solid #ccc;border-radius:8px;font-size:1rem">
+      <button class="btn-ok" onclick="buscarReservaPagar()">Buscar mi reserva</button>
+      <div class="nota">Si preferís, también podés pagar en efectivo a Yami cuando llegues a la casa.</div>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function buscarReservaPagar(){
+    const fin=(t)=>String(t||'').replace(/\D/g,'').slice(-8);
+    const t=fin(document.getElementById('tel-pagar')?.value);
+    if(t.length<8){ alert('Poné el teléfono completo, por favor.'); return; }
+    const hoy=new Date(); hoy.setHours(0,0,0,0);
+    const lista=reservas.filter(r=>fin(r.tel)===t && r.estado!=='pendiente' && new Date(r.salida+'T00:00:00')>=hoy)
+      .sort((a,b)=>a.entrada.localeCompare(b.entrada));
+    const r=lista.find(x=>saldoDe(x)>0)||lista[0];
+    if(!r){ alert('No encontramos una reserva con ese teléfono. Escribinos por WhatsApp al 11 5846-7707.'); return; }
+    abrirPagarResto(r.id);
+  }
 
   function abrirPagarResto(id){
     const r = id ? reservas.find(x=>x.id===id) : null;
+    if(!r){ pedirTelPagar(); return; }
+    PAGAR_RES_ID=r.id;
     const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
-    let datos='';
-    if(r){
-      datos=`<div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
+    const datos=`<div class="linea"><span>Casa:</span><span>${r.cabana}</span></div>
         ${r.nombre?`<div class="linea"><span>Nombre:</span><span>${r.nombre}</span></div>`:''}
         <div class="linea"><span>Entrada:</span><span>${f(r.entrada)}</span></div>
-        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>
-        <div class="seña-box">
-          <div>Lo que falta pagar</div>
-          <div class="seña-monto">${formatPrecio(saldoDe(r))}</div>
-        </div>`;
+        <div class="linea"><span>Salida:</span><span>${f(r.salida)}</span></div>`;
+    let html;
+    if(r.resto_comprobante_subido || saldoDe(r)<=0){
+      html=`<h3>✅ ¡Ya está todo pago!</h3>${datos}
+        <div class="nota" style="font-size:0.9rem;color:#2c241b">${r.resto_comprobante_subido?'Ya recibimos tu comprobante. ':''}No tenés que hacer nada más. ¡Que disfrutes la estadía! 😊</div>`;
+    } else {
+      html=`<h3>💳 Pagar lo que falta</h3>${datos}
+        <div class="seña-box"><div>Lo que falta pagar</div><div class="seña-monto">${formatPrecio(saldoDe(r))}</div></div>
+        <div class="alias-box">
+          <div style="font-size:0.8rem;color:#6b6254">Alias para transferir:</div>
+          <div class="alias-txt">${PAGO.alias}</div>
+          <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
+          <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
+        </div>
+        <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">Copiá el alias y hacé la transferencia. Después tocá el botón verde y elegí la foto o el PDF del comprobante: con eso ya queda todo pago ✅</div>
+        <input type="file" id="input-resto" accept="image/*,application/pdf" style="display:none" onchange="subirComprobanteResto(this)">
+        <button class="btn-ok" id="btn-subir-resto" onclick="document.getElementById('input-resto').click()">📎 Subir comprobante</button>
+        <div class="nota">Si preferís, también podés pagar en efectivo a Yami cuando llegues a la casa.</div>`;
     }
-    document.getElementById('modal-contenido').innerHTML=`
-      <h3>💳 Pagar lo que falta</h3>
-      ${datos}
-      <div class="alias-box">
-        <div style="font-size:0.8rem;color:#6b6254">Alias para transferir:</div>
-        <div class="alias-txt">${PAGO.alias}</div>
-        <div style="font-size:0.85rem;margin-top:0.2rem">Titular: <strong>${PAGO.titular}</strong></div>
-        <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
-      </div>
-      <div class="nota" style="font-size:0.85rem;color:#2c241b;line-height:1.45">
-        <strong>1)</strong> Copiá el alias y hacé la transferencia.<br>
-        <strong>2)</strong> Tocá el botón verde: se abre WhatsApp con el aviso de pago. <strong>Enviá ese mensaje.</strong><br>
-        <strong>3)</strong> Mandanos el comprobante <strong>en ese mismo chat</strong>. Desde Mercado Pago: "Compartir comprobante" → WhatsApp.
-      </div>
-      <div class="nota">Si preferís, también podés pagar en efectivo a Yami cuando llegues a la casa.</div>
-      <button class="btn-ok" onclick="avisarPagoResto('${r?r.id:''}')">Avisar el pago por WhatsApp</button>
-      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>
-    `;
+    document.getElementById('modal-contenido').innerHTML=html+`<button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
     document.getElementById('modal-reserva').classList.add('abierto');
   }
 
-  function avisarPagoResto(id){
-    const r = id ? reservas.find(x=>x.id===id) : null;
-    let msg='PAGO DEL RESTO\n\nHola! Transferí lo que faltaba de mi reserva.';
-    if(r){
-      const cab=CABANAS.find(c=>c.nombre===r.cabana);
-      const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
-      msg+=`\n\n${cab?nombreParaMensaje(cab.id):r.cabana}`;
-      if(r.nombre) msg+=`\nNombre: ${r.nombre}`;
-      msg+=`\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nMonto: ${formatPrecio(saldoDe(r))}`;
+  async function subirComprobanteResto(input){
+    const file=input.files&&input.files[0]; if(!file) return;
+    const r=reservas.find(x=>x.id===PAGAR_RES_ID); if(!r) return;
+    const btn=document.getElementById('btn-subir-resto');
+    const volver=()=>{ if(btn){ btn.disabled=false; btn.textContent='📎 Subir comprobante'; } input.value=''; };
+    if(btn){ btn.disabled=true; btn.textContent='Subiendo...'; }
+    try{
+      let data=await leerArchivo(file), tipo='imagen';
+      if(file.type==='application/pdf'){
+        tipo='pdf';
+        if(data.length>900000){ alert('El PDF es muy pesado. Mandá una captura de pantalla del comprobante, por favor.'); volver(); return; }
+      } else {
+        data=await achicarImagen(data);
+        if(!data){ alert('No se pudo leer esa imagen. Probá con una captura de pantalla.'); volver(); return; }
+      }
+      const archivo={ data, tipo, nombre:(file.name||'').slice(0,80), subido_ms:Date.now() };
+      try{ await comprobantesRef.doc(r.id+'_resto').set(archivo); }
+      catch(e){ await reservasRef.doc(r.id).update({ resto_comprobante_archivo: archivo }); }
+      const monto=saldoDe(r);
+      await reservasRef.doc(r.id).update({
+        pago_llegada:(r.pago_llegada||0)+monto, saldo:0, resto_monto:monto,
+        resto_comprobante_subido:true, resto_comprobante_ms:Date.now(), resto_verificado:false
+      });
+      restoListo(r, monto);
+    }catch(e){
+      alert('No se pudo subir. Revisá tu conexión y probá de nuevo.');
+      volver();
     }
-    msg+='\n\nTe mando el comprobante por este chat.';
-    window.location.href=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+  }
+
+  function waRestoEnviado(r, monto){
+    const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
+    const cab=CABANAS.find(c=>c.nombre===r.cabana);
+    const msg=`PAGO DEL RESTO\n\nHola! Ya subí el comprobante de lo que faltaba.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nMonto: ${formatPrecio(monto)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
+    return `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
+  }
+
+  function restoListo(r, monto){
+    const waUrl=waRestoEnviado(r, monto);
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>✅ ¡Listo! Ya está todo pago</h3>
+      <div class="nota" style="font-size:0.95rem;color:#2c241b">Recibimos tu comprobante de ${formatPrecio(monto)}. No tenés que hacer nada más 😊</div>
+      <div class="aviso-comprobante"><div class="titulo">⚠️ Un último paso</div>En WhatsApp tocá <strong>Enviar</strong> para avisarle a Rubén. Si cerraste WhatsApp sin enviar, tocá el botón verde de acá abajo.</div>
+      <a class="btn-ok" href="${waUrl}" style="text-decoration:none;text-align:center;box-sizing:border-box">📲 Avisarle a Rubén por WhatsApp</a>
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    setTimeout(()=>{ window.location.href=waUrl; }, 1200);
+  }
+
+  // Admin: ver el comprobante del resto y marcar que entro la plata
+  async function verComprobanteResto(id){
+    let a=null;
+    try{ const d=await comprobantesRef.doc(id+'_resto').get(); if(d.exists) a=d.data(); }catch(e){}
+    if(!a){ const r=reservas.find(x=>x.id===id); a=r&&r.resto_comprobante_archivo; }
+    if(!a||!a.data){ alert('No encontré el comprobante.'); return; }
+    if(a.tipo==='pdf'){
+      try{
+        const b=atob(a.data.split(',')[1]); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+        const url=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));
+        const l=document.createElement('a'); l.href=url; l.download=(a.nombre||'comprobante.pdf'); l.target='_blank'; document.body.appendChild(l); l.click(); l.remove();
+      }catch(e){ alert('No se pudo abrir el PDF.'); }
+      return;
+    }
+    document.getElementById('modal-contenido').innerHTML=`
+      <h3>Comprobante del resto</h3>
+      <img src="${a.data}" style="width:100%;border-radius:8px;border:1px solid #ddd">
+      <button class="btn-cancelar" onclick="cerrarReserva()">Cerrar</button>`;
+    document.getElementById('modal-reserva').classList.add('abierto');
+  }
+  function marcarRestoOk(id){
+    reservasRef.doc(id).update({ resto_verificado:true })
+      .then(()=>{ mostrarToast('Resto verificado'); cerrarReserva(); })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
+  }
+  // Comprobante trucho: vuelve el saldo como estaba
+  function restoTrucho(id){
+    const r=reservas.find(x=>x.id===id); if(!r) return;
+    if(!confirm('¿El comprobante del resto es trucho? El saldo vuelve a quedar pendiente.')) return;
+    const m=r.resto_monto||0;
+    reservasRef.doc(id).update({ pago_llegada:Math.max(0,(r.pago_llegada||0)-m), saldo:(r.saldo||0)+m,
+      resto_comprobante_subido:false, resto_verificado:firebase.firestore.FieldValue.delete(), resto_monto:0 })
+      .then(()=>{ comprobantesRef.doc(id+'_resto').delete().catch(()=>{}); mostrarToast('Saldo pendiente otra vez'); cerrarReserva(); })
+      .catch(()=>mostrarToast('Error al guardar, revisa tu conexion'));
   }
 
   function mostrarPagarDesdeLink(){
@@ -1359,7 +1453,7 @@
       const choca=superpuestos.has(r.id);
       const pend=r.estado==='pendiente';
       html+=`<tr id="fila-${r.id}"${choca?' class="fila-superpuesta"':(pend?' class="fila-pendiente"':'')}>
-        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${pend?'<span class="badge-pend">⏳ PENDIENTE'+(r.comprobante_enviado?' 📎':'')+'</span>':''}${(!pend&&r.pago_verificado===false)?'<span class="badge-pend">🔎 REVISAR PAGO</span>':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
+        <td>${r.fecha_registro?fechaCorta(r.fecha_registro):"-"}</td><td>${choca?'⚠️ ':''}${pend?'<span class="badge-pend">⏳ PENDIENTE'+(r.comprobante_enviado?' 📎':'')+'</span>':''}${(!pend&&r.pago_verificado===false)?'<span class="badge-pend">🔎 REVISAR PAGO</span>':''}${r.resto_verificado===false?'<span class="badge-pend">🔎 REVISAR RESTO</span>':''}${r.cabana.replace('Casa ','')}</td><td data-label="Entrada">${fechaCorta(r.entrada)}</td><td data-label="Salida">${fechaCorta(r.salida)}</td><td data-label="Dias">${r.dias}</td>
         <td data-label="Total">${formatPrecio(r.total)}</td>
         <td data-label="Seña">${formatPrecio(r.senia||0)}</td>
         <td data-label="Saldo"><span class="badge-saldo ${saldoOk?'badge-ok':'badge-pendiente'}">${formatPrecio(r.saldo)}</span></td>
@@ -1369,6 +1463,8 @@
           ${pend?`<button class="btn-editar" title="Confirmar pago" onclick="confirmarPendiente('${r.id}')">✅</button>`:''}
           ${r.comprobante_subido?`<button class="btn-editar" title="Ver comprobante" onclick="verComprobante('${r.id}')">👁</button>`:''}
           ${(!pend&&r.pago_verificado===false)?`<button class="btn-editar" title="La plata entró: pago verificado" onclick="marcarPagoOk('${r.id}')">✔</button>`:''}
+          ${r.resto_comprobante_subido?`<button class="btn-editar" title="Ver comprobante del resto" onclick="verComprobanteResto('${r.id}')">👁$</button>`:''}
+          ${r.resto_verificado===false?`<button class="btn-editar" title="Entró el resto" onclick="marcarRestoOk('${r.id}')">✔$</button>`:''}
           ${!pend?`<button class="btn-editar" title="Mensaje para la casera" onclick="enviarACasera('${r.id}')">🏠</button>`:''}
           ${(!pend&&r.tel)?`<button class="btn-editar" title="Enviar confirmacion al cliente" onclick="enviarConfirmacion('${r.id}')">💬</button>`:''}
           <button class="btn-editar" onclick="editarReserva('${r.id}')">✏️</button>

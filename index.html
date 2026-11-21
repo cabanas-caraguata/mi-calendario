@@ -779,7 +779,7 @@
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nuevaRef=reservasRef.doc();
     const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
-    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${linkConfirmar}`;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.`;
     const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       nuevaRef.set({
@@ -1124,7 +1124,7 @@
   function waRestoEnviado(r, monto){
     const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const cab=CABANAS.find(c=>c.nombre===r.cabana);
-    const msg=`PAGO DEL RESTO\n\nHola! Ya subí el comprobante de lo que faltaba.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nMonto: ${formatPrecio(monto)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
+    const msg=`PAGO DEL RESTO\n\nHola! Ya subí el comprobante de lo que faltaba.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nMonto: ${formatPrecio(monto)}`;
     return `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
   }
 
@@ -1313,7 +1313,7 @@
     const f=(k)=>new Date(k+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const cab=CABANAS.find(c=>c.nombre===r.cabana);
     const saldo=Math.max(0,(r.total||0)-senia);
-    const msg=`COMPROBANTE ENVIADO\n\nHola! Ya subi el comprobante de la seña.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nSeña: ${formatPrecio(senia)}\nResto a pagar al llegar: ${formatPrecio(saldo)}\n\n(Uso interno de Cabañas Caraguatá, no hace falta tocarlo)\n${CAL_URL}?confirmar=${r.id}`;
+    const msg=`COMPROBANTE ENVIADO\n\nHola! Ya subi el comprobante de la seña.\n\n${cab?nombreParaMensaje(cab.id):r.cabana}\nNombre: ${r.nombre||''}\nEntrada: ${f(r.entrada)}\nSalida: ${f(r.salida)}\nSeña: ${formatPrecio(senia)}\nResto a pagar al llegar: ${formatPrecio(saldo)}`;
     return `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
   }
   const AVISO_ENVIAR_WA = `<div class="aviso-comprobante"><div class="titulo">⚠️ Falta un último paso</div>Tu reserva quedó confirmada, pero <strong>Rubén todavía no se enteró</strong>. En WhatsApp tocá <strong>Enviar</strong> para avisarle. Si cerraste WhatsApp sin enviar, tocá el botón verde de acá abajo.</div>`;

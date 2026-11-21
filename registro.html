@@ -253,6 +253,7 @@
     const resena = 'https://g.page/r/CdzvbHsO9WpWEBE/review';
     const msg = mensajePagoTotal(r, hoy, resena);
     window.open('https://wa.me/' + telWhatsApp(r.tel) + '?text=' + encodeURIComponent(msg), '_blank');
+    if(r.id) reservasRef.doc(r.id).update({ pago_total_avisado: hoy }).catch(()=>{});
   }
 
   function guardarPagos(id){

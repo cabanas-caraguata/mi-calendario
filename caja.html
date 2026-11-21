@@ -259,7 +259,7 @@ $('llegLista').addEventListener('click',async ev=>{const b=ev.target.closest('.c
  try{const c=idCasa(r.cabana)||'';const nom=c==='marron'?'marrón':c;
   const nuevoLleg=(+r.pago_llegada||0)+sal;
   await firebase.firestore().collection('calendario').doc('_reservas').collection('items').doc(r._id)
-   .update({pago_llegada:nuevoLleg,saldo:(+r.total||0)-(+r.senia||0)-nuevoLleg,cobro_yami:(+r.cobro_yami||0)+sal,cobro_yami_fecha:hoy()});
+   .update({pago_llegada:nuevoLleg,saldo:(+r.total||0)-(+r.senia||0)-nuevoLleg,cobro_yami:sal,cobro_yami_fecha:hoy()});
   const x={d:hoy(),e:sal,s:0,n:(nom+' '+(r.nombre||'')).trim(),creado:Date.now()};
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},CLAVE,new TextEncoder().encode(JSON.stringify(x)));

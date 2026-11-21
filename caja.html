@@ -226,6 +226,17 @@ function negocio(){
  $('nHist').innerHTML=ks.slice().reverse().map(k=>{const t=pm[k].fact+pm[k].kayak;return '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><span>'+nomMes(k)+'</span><b>'+fmt(t)+'</b></div><div class="barra" style="width:'+Math.max(2,t/mx*100)+'%"></div></div>'}).join('');
 }
 $('meses').onclick=e=>{const b=e.target.closest('button');if(b){mesSel=b.dataset.k;negocio()}};
+// Mensaje de "recibimos el pago total" (el mismo en registro y en la caja de Yami)
+  function mensajePagoTotal(r, hoy, resena){
+    let nom = String(r.nombre||'').trim().split(/\s+/)[0] || '';
+    if(nom) nom = nom.charAt(0).toUpperCase() + nom.slice(1).toLowerCase();
+    const hola = nom ? '¡Hola, ' + nom + '! 😊' : '¡Hola! 😊';
+    if((r.salida||'') < hoy)
+      return hola + ' Recibimos el pago total, muchas gracias por elegirnos 🙌\nSi la pasaron lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+    if((r.entrada||'') <= hoy)
+      return hola + ' ¿Llegaron bien? ¿Encontraron todo bien?\nRecibimos el pago total, muchas gracias 🙌\n¡Que disfruten mucho la estadía! Cualquier cosa que necesiten, me escriben por acá.\nY si la pasan lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+    return hola + ' Recibimos el pago total, muchas gracias 🙌 Ya está todo listo para tu estadía.\nCualquier cosa que necesiten, me escriben por acá.\nY si la pasan lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+  }
 // ===== Llegadas (todas las claves; cobrar solo Yami y admin) =====
 const COLC={verde:'#2e8b57',blanca:'#b9b4a8',roja:'#c0392b',marron:'#8b5a2b'};
 const DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -268,7 +279,7 @@ $('llegLista').addEventListener('click',async ev=>{const b=ev.target.closest('.c
   let tl=String(r.tel||'').replace(/\D/g,'').replace(/^54/,'').replace(/^0/,'');
   if(tl.length===11&&tl[0]==='9')tl=tl.slice(1);if(tl.length===10&&tl.startsWith('15'))tl='11'+tl.slice(2);if(tl.length===12&&tl.startsWith('1115'))tl='11'+tl.slice(4);
   if(tl){const resena='https://g.page/r/CdzvbHsO9WpWEBE/review';
-   const rec=(String(r.salida)<=hoy()?'¡Hola! Recibimos el pago total, muchas gracias por elegirnos 😊\nSi la pasaron lindo, nos ayuda mucho una reseña en Google:\n':'¡Hola! Recibimos el pago total, muchas gracias 😊 ¡Que disfruten la estadía!\nSi la pasan lindo, nos ayuda mucho una reseña en Google:\n')+resena;
+   const rec=mensajePagoTotal(r,hoy(),resena);
    msg+='\n\n👇 Tocá acá para mandarle el recibo al cliente:\nhttps://wa.me/549'+tl+'?text='+encodeURIComponent(rec)}
   location.href='https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg);
  }catch(e){b.disabled=false;b.dataset.ok='';b.textContent='No se pudo guardar, probá de nuevo'}});

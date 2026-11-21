@@ -234,14 +234,24 @@
       .catch(()=> alert('No se pudo guardar. Revisá la conexión.'));
   }
 
+  // Mensaje de "recibimos el pago total" (el mismo en registro y en la caja de Yami)
+  function mensajePagoTotal(r, hoy, resena){
+    let nom = String(r.nombre||'').trim().split(/\s+/)[0] || '';
+    if(nom) nom = nom.charAt(0).toUpperCase() + nom.slice(1).toLowerCase();
+    const hola = nom ? '¡Hola, ' + nom + '! 😊' : '¡Hola! 😊';
+    if((r.salida||'') < hoy)
+      return hola + ' Recibimos el pago total, muchas gracias por elegirnos 🙌\nSi la pasaron lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+    if((r.entrada||'') <= hoy)
+      return hola + ' ¿Llegaron bien? ¿Encontraron todo bien?\nRecibimos el pago total, muchas gracias 🙌\n¡Que disfruten mucho la estadía! Cualquier cosa que necesiten, me escriben por acá.\nY si la pasan lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+    return hola + ' Recibimos el pago total, muchas gracias 🙌 Ya está todo listo para tu estadía.\nCualquier cosa que necesiten, me escriben por acá.\nY si la pasan lindo, nos ayuda muchísimo una reseña en Google 👇\n' + resena;
+  }
+
   function avisarPagoTotal(r){
     if(!r.tel) return;
     const _h = new Date();
     const hoy = _h.getFullYear()+'-'+String(_h.getMonth()+1).padStart(2,'0')+'-'+String(_h.getDate()).padStart(2,'0');
     const resena = 'https://g.page/r/CdzvbHsO9WpWEBE/review';
-    const msg = (r.salida||'') <= hoy
-      ? '¡Hola! Recibimos el pago total, muchas gracias por elegirnos 😊\nSi la pasaron lindo, nos ayuda mucho una reseña en Google:\n' + resena
-      : '¡Hola! Recibimos el pago total, muchas gracias 😊 ¡Que disfruten la estadía!\nSi la pasan lindo, nos ayuda mucho una reseña en Google:\n' + resena;
+    const msg = mensajePagoTotal(r, hoy, resena);
     window.open('https://wa.me/' + telWhatsApp(r.tel) + '?text=' + encodeURIComponent(msg), '_blank');
   }
 

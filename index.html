@@ -1574,7 +1574,8 @@
         const nombreMensaje = cab.id==='verde'?'Casa Ver de':cab.id==='roja'?'Casa Ro ja':cab.id==='blanca'?'Casa Blan ca':'Casa Ma rron';
         const msg=`Hola! Quiero consultar disponibilidad para ${nombreMensaje}.\nEntrada: ${formatFecha(sel.entrada)} (desde las ${HORA_ENTRADA})\nSalida: ${formatFecha(sel.salida)} (hasta las ${HORA_SALIDA})\nDias: ${dias}\nTotal estimado: ${formatPrecio(total)}\n\nVer calendario: ${CAL_URL}\n\nEnviado desde la web`;
         btnWa.href=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
-        btnWa.style.display='block';
+        // Con la reserva online activa, el botón de consulta no se muestra (si las fechas están libres, reservan directo)
+        btnWa.style.display=(RESERVA_ONLINE||admin)?'none':'block';
       }
       if(btnMarcar) btnMarcar.style.display=admin?'block':'none';
       if(btnGuardar) btnGuardar.style.display='none';

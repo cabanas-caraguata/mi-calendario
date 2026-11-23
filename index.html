@@ -723,6 +723,7 @@
         <button class="btn-copiar" onclick="copiarAlias()">Copiar</button>
       </div>
       <div class="nota" style="font-size:0.82rem;color:#2c241b;line-height:1.45;background:#f5f0e8;border-radius:8px;padding:0.6rem 0.7rem;margin:0.5rem 0">
+        👥 La ${cab.nombre} es para <strong>${cab.capacidad.replace(/\D/g,'')} personas como máximo</strong>. Si son más, consultanos por WhatsApp antes de reservar.<br>
         📌 La seña reserva la casa solo para vos (dejamos de ofrecerla a otros), por eso no se devuelve si cancelás. El resto lo pagás al llegar.<br>
         🔒 Nuestro <strong>único</strong> número para reservas es el 11 5846-7707, el mismo de todos nuestros reels.<br>
         🎥 ¿Querés ver el lugar antes? Hacé una videollamada con <strong>Yami</strong>, nuestra casera, que vive en la isla: 11 3365-2352.
@@ -779,7 +780,7 @@
     const salidaTxt=new Date(r.salida+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long'});
     const nuevaRef=reservasRef.doc();
     const linkConfirmar=CAL_URL+'?confirmar='+nuevaRef.id;
-    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.`;
+    const msg=`RESERVA ONLINE\n\nHola! Reservé estas fechas desde la web.\n\n${nombreParaMensaje(r.cabId)}\nCapacidad maxima: ${cab.capacidad.replace(/\D/g,'')} personas\nNombre: ${nombre}\nTel: ${telInternacional(tel)}\nEntrada: ${entradaTxt} (${HORA_ENTRADA})\nSalida: ${salidaTxt} (${HORA_SALIDA})\nDias: ${r.dias}\nTotal: ${formatPrecio(r.total)}\nSeña a depositar: ${formatPrecio(r.senia)}\nAlias: ${PAGO.alias}\nTitular: ${PAGO.titular}\n\nCuando pagues, subi el comprobante en este link:\n${CAL_URL}?comprobante=${nuevaRef.id}\nTengo ${MINUTOS_PENDIENTE} minutos para subirlo, si no la reserva se elimina sola.\n⚠️ El comprobante va en el link, no por este chat.`;
     const waUrl=`https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(msg)}`;
     const guardar=Promise.all([
       nuevaRef.set({

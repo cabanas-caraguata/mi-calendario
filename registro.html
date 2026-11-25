@@ -95,6 +95,25 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const reservasRef = db.collection('calendario').doc('_reservas').collection('items');
+  const comprobantesRef = db.collection('calendario').doc('_comprobantes').collection('items');
+
+  // Los comprobantes (fotos) se borran solos a los 3 días: la plata ya se controló en Mercado Pago
+  const DIAS_COMPROBANTE = 3;
+  let limpiezaHecha = false;
+  function borrarComprobantesViejos(){
+    if(limpiezaHecha) return; limpiezaHecha = true;
+    const limite = Date.now() - DIAS_COMPROBANTE*24*3600000;
+    comprobantesRef.where('subido_ms','<',limite).get()
+      .then(s => s.forEach(d => d.ref.delete().catch(()=>{})))
+      .catch(()=>{});
+    // por si alguno quedó guardado adentro de la reserva
+    reservas.forEach(r => {
+      const upd = {};
+      if(r.comprobante_archivo && (r.comprobante_archivo.subido_ms||0) < limite) upd.comprobante_archivo = firebase.firestore.FieldValue.delete();
+      if(r.resto_comprobante_archivo && (r.resto_comprobante_archivo.subido_ms||0) < limite) upd.resto_comprobante_archivo = firebase.firestore.FieldValue.delete();
+      if(Object.keys(upd).length) reservasRef.doc(r.id).update(upd).catch(()=>{});
+    });
+  }
 
   let reservas = [];
 
@@ -374,6 +393,7 @@
   function escucharReservas(){
     reservasRef.onSnapshot((snap) => {
       reservas = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      borrarComprobantesViejos();
       if(!abierta) render();
     }, (err) => {
       document.getElementById('lista').innerHTML = '<div class="vacio">Sin conexión al registro de reservas</div>';

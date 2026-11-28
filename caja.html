@@ -280,9 +280,22 @@ $('llegLista').addEventListener('click',async ev=>{const b=ev.target.closest('.c
   if(tl.length===11&&tl[0]==='9')tl=tl.slice(1);if(tl.length===10&&tl.startsWith('15'))tl='11'+tl.slice(2);if(tl.length===12&&tl.startsWith('1115'))tl='11'+tl.slice(4);
   if(tl){const resena='https://g.page/r/CdzvbHsO9WpWEBE/review';
    const rec=mensajePagoTotal(r,hoy(),resena);
+   try{localStorage.setItem('avisoRuben',msg+'\nYa le mandé la bienvenida al cliente ✅')}catch(e){}
    location.href='https://api.whatsapp.com/send?phone=549'+tl+'&text='+encodeURIComponent(rec);return}
   location.href='https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(msg);
  }catch(e){b.disabled=false;b.dataset.ok='';b.textContent='No se pudo guardar, probá de nuevo'}});
+// aviso a Rubén (temporal): al volver de mandarle el mensaje al cliente
+function mostrarAvisoRuben(){let m=null;try{m=localStorage.getItem('avisoRuben')}catch(e){}
+ let bt=document.getElementById('btnAvisoRuben');
+ if(!m){if(bt)bt.remove();return}
+ if(!bt){bt=document.createElement('button');bt.id='btnAvisoRuben';
+  bt.style.cssText='position:fixed;left:12px;right:12px;bottom:16px;z-index:9999;padding:18px;font-size:18px;font-weight:700;border:0;border-radius:14px;background:#25D366;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+  bt.textContent='✅ Ahora tocá acá para avisarle a Rubén';
+  bt.onclick=()=>{let t=null;try{t=localStorage.getItem('avisoRuben');localStorage.removeItem('avisoRuben')}catch(e){}
+   bt.remove();if(t)location.href='https://api.whatsapp.com/send?phone=541158467707&text='+encodeURIComponent(t)};
+  document.body.appendChild(bt)}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)mostrarAvisoRuben()});
+window.addEventListener('pageshow',mostrarAvisoRuben);mostrarAvisoRuben();
 // borrar
 $('lista').addEventListener('click',async ev=>{const el=ev.target.closest('.del');if(!el||!ADMIN)return;
  if(el.dataset.ok!=='1'){el.dataset.ok='1';el.textContent='¿seguro? tocá de nuevo';return}
